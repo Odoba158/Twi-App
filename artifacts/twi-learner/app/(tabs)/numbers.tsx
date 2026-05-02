@@ -26,11 +26,19 @@ const RANGE_COLORS = [
   ['#C0392B', '#E74C3C'],
 ];
 
-const RANGES = [
-  { label: '1–20', start: 0, end: 19 },
-  { label: '21–40', start: 20, end: 39 },
-  { label: '41–60', start: 40, end: 59 },
-  { label: '61–80', start: 60, end: 79 },
+const SPELL_RANGES = [
+  { label: '1–10',  start: 0,  end: 9  },
+  { label: '11–20', start: 10, end: 19 },
+  { label: '21–30', start: 20, end: 29 },
+  { label: '31–40', start: 30, end: 39 },
+  { label: '41–50', start: 40, end: 49 },
+];
+
+const RECITE_RANGES = [
+  { label: '1–20',   start: 0,  end: 19 },
+  { label: '21–40',  start: 20, end: 39 },
+  { label: '41–60',  start: 40, end: 59 },
+  { label: '61–80',  start: 60, end: 79 },
   { label: '81–100', start: 80, end: 99 },
 ];
 
@@ -40,13 +48,16 @@ export default function NumbersScreen() {
   const { updateNumbersProgress } = useProgress();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [rangeIndex, setRangeIndex] = useState(0);
+  const [reciteRangeIndex, setReciteRangeIndex] = useState(0);
+  const [spellRangeIndex, setSpellRangeIndex] = useState(0);
   const [isReciting, setIsReciting] = useState(false);
+  const [isSpelling, setIsSpelling] = useState(false);
+  const [activeLetterIdx, setActiveLetterIdx] = useState(-1);
   const recitingRef = useRef(false);
+  const spellingRef = useRef(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const range = RANGES[rangeIndex];
-  const colorPair = RANGE_COLORS[rangeIndex % RANGE_COLORS.length];
+  const colorPair = RANGE_COLORS[Math.floor(currentIndex / 20) % RANGE_COLORS.length];
   const current = TWI_NUMBERS[currentIndex];
 
   const animateCard = () => {
@@ -58,6 +69,7 @@ export default function NumbersScreen() {
 
   const goTo = useCallback(
     (index: number) => {
+      stopSpelling();
       const clamped = Math.max(0, Math.min(TWI_NUMBERS.length - 1, index));
       setCurrentIndex(clamped);
       updateNumbersProgress(clamped);
@@ -67,20 +79,56 @@ export default function NumbersScreen() {
     [updateNumbersProgress]
   );
 
-  const switchRange = (rIdx: number) => {
-    setRangeIndex(rIdx);
-    goTo(RANGES[rIdx].start);
-    stopRecite();
-  };
-
   const handleSpeak = () => {
     speakText(`${current.number}. ${current.twi}.`, 0.75);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  const stopSpelling = useCallback(() => {
+    spellingRef.current = false;
+    setIsSpelling(false);
+    setActiveLetterIdx(-1);
+    stopSpeech();
+  }, []);
+
+  const startSpelling = useCallback(() => {
+    spellingRef.current = true;
+    setIsSpelling(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const letters = current.twi.split('');
+    let idx = 0;
+    const spellNext = () => {
+      if (!spellingRef.current || idx >= letters.length) {
+        spellingRef.current = false;
+        setIsSpelling(false);
+        setActiveLetterIdx(-1);
+        return;
+      }
+      setActiveLetterIdx(idx);
+      speakLetter(
+        letters[idx],
+        () => {
+          idx++;
+          if (spellingRef.current) setTimeout(spellNext, 300);
+        },
+        0.65
+      );
+    };
+    spellNext();
+  }, [current]);
+
+  const stopRecite = useCallback(() => {
+    recitingRef.current = false;
+    setIsReciting(false);
+    stopSpeech();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+  }, []);
+
   const startRecite = useCallback(() => {
+    stopSpelling();
     recitingRef.current = true;
     setIsReciting(true);
+    const range = RECITE_RANGES[reciteRangeIndex];
     let idx = range.start;
 
     const reciteNext = () => {
@@ -103,26 +151,18 @@ export default function NumbersScreen() {
       );
     };
     reciteNext();
-  }, [range, updateNumbersProgress]);
-
-  const stopRecite = useCallback(() => {
-    recitingRef.current = false;
-    setIsReciting(false);
-    stopSpeech();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-  }, []);
+  }, [reciteRangeIndex, updateNumbersProgress, stopSpelling]);
 
   useEffect(() => {
     return () => {
       recitingRef.current = false;
+      spellingRef.current = false;
       stopSpeech();
     };
   }, []);
 
   const topPad = Platform.OS === 'web' ? 67 : insets.top;
-
-  const isAtStart = currentIndex <= range.start;
-  const isAtEnd = currentIndex >= range.end;
+  const spellLetters = current.twi.split('');
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -139,32 +179,6 @@ export default function NumbersScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: Platform.OS === 'web' ? 118 : insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.rangeScroll}>
-          <View style={styles.rangeRow}>
-            {RANGES.map((r, i) => (
-              <Pressable
-                key={r.label}
-                onPress={() => switchRange(i)}
-                style={[
-                  styles.rangeBtn,
-                  {
-                    backgroundColor: i === rangeIndex ? RANGE_COLORS[i][0] : colors.muted,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.rangeBtnText,
-                    { color: i === rangeIndex ? '#fff' : colors.mutedForeground },
-                  ]}
-                >
-                  {r.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </ScrollView>
-
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <LinearGradient
             colors={colorPair as [string, string]}
@@ -177,40 +191,86 @@ export default function NumbersScreen() {
           </LinearGradient>
         </Animated.View>
 
-        <Pressable
-          onPress={handleSpeak}
-          style={({ pressed }) => [
-            styles.speakBtn,
-            { backgroundColor: colorPair[0], opacity: pressed ? 0.8 : 1 },
-          ]}
-        >
-          <Feather name="volume-2" size={20} color="#fff" />
-          <Text style={styles.speakBtnText}>Hear Pronunciation</Text>
-        </Pressable>
+        <View style={styles.actionRow}>
+          <Pressable
+            onPress={handleSpeak}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              { backgroundColor: colorPair[0], flex: 1, opacity: pressed ? 0.8 : 1 },
+            ]}
+          >
+            <Feather name="volume-2" size={18} color="#fff" />
+            <Text style={styles.actionBtnText}>Hear Word</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={isSpelling ? stopSpelling : startSpelling}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              {
+                backgroundColor: isSpelling ? '#E74C3C' : colorPair[1],
+                flex: 1,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+          >
+            <Feather name={isSpelling ? 'square' : 'type'} size={18} color="#fff" />
+            <Text style={styles.actionBtnText}>{isSpelling ? 'Stop' : 'Spell It'}</Text>
+          </Pressable>
+        </View>
+
+        {spellLetters.length > 0 && (
+          <View style={[styles.lettersBox, { backgroundColor: colors.card }]}>
+            <Text style={[styles.lettersLabel, { color: colors.mutedForeground }]}>Spelling</Text>
+            <View style={styles.letterBoxRow}>
+              {spellLetters.map((letter, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.letterBox,
+                    {
+                      backgroundColor: i === activeLetterIdx ? colorPair[0] : colors.muted,
+                      borderColor: i === activeLetterIdx ? colorPair[0] : colors.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.letterBoxText,
+                      { color: i === activeLetterIdx ? '#fff' : colors.text },
+                    ]}
+                  >
+                    {letter}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
         <View style={styles.navRow}>
           <Pressable
             onPress={() => goTo(currentIndex - 1)}
-            disabled={isAtStart || isReciting}
+            disabled={currentIndex === 0 || isReciting}
             style={({ pressed }) => [
               styles.navBtn,
-              { backgroundColor: colors.card, opacity: isAtStart || isReciting ? 0.35 : pressed ? 0.7 : 1 },
+              { backgroundColor: colors.card, opacity: currentIndex === 0 || isReciting ? 0.35 : pressed ? 0.7 : 1 },
             ]}
           >
             <Feather name="chevron-left" size={30} color={colors.text} />
           </Pressable>
 
           <View style={styles.numGrid}>
-            {TWI_NUMBERS.slice(range.start, range.end + 1).map((item, i) => {
-              const idx = range.start + i;
-              const isActive = idx === currentIndex;
+            {TWI_NUMBERS.map((item, i) => {
+              const isActive = i === currentIndex;
+              const pairIdx = Math.floor(i / 20) % RANGE_COLORS.length;
               return (
                 <Pressable
                   key={item.number}
-                  onPress={() => goTo(idx)}
+                  onPress={() => goTo(i)}
                   style={[
                     styles.numGridItem,
-                    { backgroundColor: isActive ? colorPair[0] : colors.muted },
+                    { backgroundColor: isActive ? RANGE_COLORS[pairIdx][0] : colors.muted },
                   ]}
                 >
                   <Text
@@ -228,28 +288,56 @@ export default function NumbersScreen() {
 
           <Pressable
             onPress={() => goTo(currentIndex + 1)}
-            disabled={isAtEnd || isReciting}
+            disabled={currentIndex === TWI_NUMBERS.length - 1 || isReciting}
             style={({ pressed }) => [
               styles.navBtn,
-              { backgroundColor: colors.card, opacity: isAtEnd || isReciting ? 0.35 : pressed ? 0.7 : 1 },
+              {
+                backgroundColor: colors.card,
+                opacity: currentIndex === TWI_NUMBERS.length - 1 || isReciting ? 0.35 : pressed ? 0.7 : 1,
+              },
             ]}
           >
             <Feather name="chevron-right" size={30} color={colors.text} />
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={isReciting ? stopRecite : startRecite}
-          style={({ pressed }) => [
-            styles.reciteBtn,
-            { backgroundColor: isReciting ? '#E74C3C' : colorPair[0], opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <Feather name={isReciting ? 'square' : 'play-circle'} size={20} color="#fff" />
-          <Text style={styles.reciteBtnText}>
-            {isReciting ? 'Stop Reciting' : `Auto Recite ${range.label}`}
-          </Text>
-        </Pressable>
+        <View style={[styles.sectionBox, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>AUTO RECITE RANGE</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.rangeRow}>
+              {RECITE_RANGES.map((r, i) => (
+                <Pressable
+                  key={r.label}
+                  onPress={() => setReciteRangeIndex(i)}
+                  style={[
+                    styles.rangeBtn,
+                    { backgroundColor: i === reciteRangeIndex ? RANGE_COLORS[i][0] : colors.muted },
+                  ]}
+                >
+                  <Text style={[styles.rangeBtnText, { color: i === reciteRangeIndex ? '#fff' : colors.mutedForeground }]}>
+                    {r.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+          <Pressable
+            onPress={isReciting ? stopRecite : startRecite}
+            style={({ pressed }) => [
+              styles.reciteBtn,
+              {
+                backgroundColor: isReciting ? '#E74C3C' : RANGE_COLORS[reciteRangeIndex][0],
+                opacity: pressed ? 0.85 : 1,
+                marginTop: 12,
+              },
+            ]}
+          >
+            <Feather name={isReciting ? 'square' : 'play-circle'} size={20} color="#fff" />
+            <Text style={styles.reciteBtnText}>
+              {isReciting ? 'Stop Reciting' : `Auto Recite ${RECITE_RANGES[reciteRangeIndex].label}`}
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
@@ -267,14 +355,10 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontFamily: 'Inter_700Bold' },
   badge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
   badgeText: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
-  content: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, gap: 20 },
-  rangeScroll: { width: '100%' },
-  rangeRow: { flexDirection: 'row', gap: 10, paddingVertical: 4 },
-  rangeBtn: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20 },
-  rangeBtnText: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
+  content: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, gap: 16 },
   numCard: {
     width: 220,
-    height: 220,
+    height: 200,
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
@@ -285,43 +369,80 @@ const styles = StyleSheet.create({
     elevation: 10,
     gap: 8,
   },
-  bigNum: { fontSize: 100, fontFamily: 'Inter_700Bold', color: '#fff' },
+  bigNum: { fontSize: 90, fontFamily: 'Inter_700Bold', color: '#fff', lineHeight: 96 },
   twiWord: { fontSize: 20, fontFamily: 'Inter_600SemiBold', color: 'rgba(255,255,255,0.9)' },
-  speakBtn: {
+  actionRow: { flexDirection: 'row', gap: 12, width: '100%' },
+  actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 28,
+    justifyContent: 'center',
+    gap: 8,
     paddingVertical: 14,
     borderRadius: 50,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
-    elevation: 5,
+    elevation: 4,
   },
-  speakBtnText: { color: '#fff', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
-  navRow: { flexDirection: 'row', alignItems: 'center', gap: 12, width: '100%' },
+  actionBtnText: { color: '#fff', fontSize: 15, fontFamily: 'Inter_600SemiBold' },
+  lettersBox: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  lettersLabel: { fontSize: 12, fontFamily: 'Inter_500Medium', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 },
+  letterBoxRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', flexWrap: 'wrap' },
+  letterBox: {
+    width: 40,
+    height: 48,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  letterBoxText: { fontSize: 20, fontFamily: 'Inter_700Bold' },
+  navRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, width: '100%' },
   navBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
-  numGrid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
-  numGridItem: { width: 32, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  numGridText: { fontSize: 11, fontFamily: 'Inter_600SemiBold' },
+  numGrid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 5, justifyContent: 'center' },
+  numGridItem: { width: 30, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  numGridText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
+  sectionBox: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  sectionLabel: { fontSize: 11, fontFamily: 'Inter_500Medium', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
+  rangeRow: { flexDirection: 'row', gap: 8 },
+  rangeBtn: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20 },
+  rangeBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
   reciteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 10,
-    paddingHorizontal: 28,
     paddingVertical: 14,
     borderRadius: 50,
     shadowColor: '#000',
