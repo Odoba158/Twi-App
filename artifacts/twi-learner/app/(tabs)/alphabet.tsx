@@ -49,7 +49,7 @@ export default function AlphabetScreen() {
   );
 
   const handleSpeak = () => {
-    speakText(`${current.letter}. ${current.exampleWord}. ${current.meaning}.`, 0.75);
+    speakText(`${current.letter}. Twi name: ${current.twiName}. Example: ${current.exampleWord}, meaning ${current.meaning}.`, 0.75);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
@@ -69,7 +69,7 @@ export default function AlphabetScreen() {
       animateCard();
       const item = TWI_ALPHABET[idx];
       speakLetter(
-        item.letter,
+        `${item.letter}. ${item.twiName}`,
         () => {
           idx++;
           if (recitingRef.current) {
@@ -122,6 +122,9 @@ export default function AlphabetScreen() {
           >
             <Text style={styles.bigLetter}>{current.letter}</Text>
             <Text style={styles.smallLetter}>{current.lowerCase}</Text>
+            <View style={styles.twiNameBadge}>
+              <Text style={styles.twiNameText}>{current.twiName}</Text>
+            </View>
           </LinearGradient>
         </Animated.View>
 
@@ -235,8 +238,16 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 10,
   },
-  bigLetter: { fontSize: 120, fontFamily: 'Inter_700Bold', color: '#fff' },
-  smallLetter: { fontSize: 32, color: 'rgba(255,255,255,0.7)', fontFamily: 'Inter_500Medium', marginTop: -12 },
+  bigLetter: { fontSize: 100, fontFamily: 'Inter_700Bold', color: '#fff', lineHeight: 108 },
+  smallLetter: { fontSize: 28, color: 'rgba(255,255,255,0.7)', fontFamily: 'Inter_500Medium', marginTop: -8 },
+  twiNameBadge: {
+    marginTop: 8,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  twiNameText: { fontSize: 18, fontFamily: 'Inter_700Bold', color: '#fff', letterSpacing: 1 },
   wordBox: {
     width: '100%',
     borderRadius: 16,
