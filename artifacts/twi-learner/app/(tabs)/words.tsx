@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Platform,
@@ -36,54 +36,41 @@ const WORD_COLORS = [
   ['#3498DB', '#7FB3D3'],
 ];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Places: '#E8961E',
-  Body: '#E74C3C',
-  Nature: '#27AE60',
-  Animals: '#8E44AD',
-  People: '#2980B9',
-  Objects: '#16A085',
-  Food: '#D35400',
-};
+const GROUP_TABS = [
+  { label: '2 Letters', count: 2, color: '#E74C3C' },
+  { label: '3 Letters', count: 3, color: '#E8961E' },
+  { label: '4 Letters', count: 4, color: '#2980B9' },
+  { label: '5+ Letters', count: 5, color: '#27AE60' },
+];
 
 export default function WordsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { incrementWordsProgress } = useProgress();
 
+  const [groupIndex, setGroupIndex] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSpelling, setIsSpelling] = useState(false);
   const [activeLetterIdx, setActiveLetterIdx] = useState(-1);
   const spellingRef = useRef(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const current = TWI_WORDS[currentIndex];
-  const colorPair = WORD_COLORS[currentIndex % WORD_COLORS.length];
-  const catColor = CATEGORY_COLORS[current.category] ?? '#888';
+  const filteredWords = useMemo(() => {
+    const g = GROUP_TABS[groupIndex];
+    if (g.count === 5) return TWI_WORDS.filter(w => w.letters.length >= 5);
+    return TWI_WORDS.filter(w => w.letters.length === g.count);
+  }, [groupIndex]);
+
+  const safeIndex = Math.min(currentIndex, Math.max(0, filteredWords.length - 1));
+  const current = filteredWords[safeIndex] ?? filteredWords[0];
+  const colorPair = WORD_COLORS[safeIndex % WORD_COLORS.length];
+  const groupColor = GROUP_TABS[groupIndex].color;
 
   const animateCard = () => {
     Animated.sequence([
       Animated.timing(scaleAnim, { toValue: 0.93, duration: 80, useNativeDriver: true }),
       Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 120, friction: 8 }),
     ]).start();
-  };
-
-  const goTo = useCallback(
-    (index: number) => {
-      stopSpelling();
-      const clamped = Math.max(0, Math.min(TWI_WORDS.length - 1, index));
-      setCurrentIndex(clamped);
-      setActiveLetterIdx(-1);
-      animateCard();
-      Haptics.selectionAsync();
-    },
-    []
-  );
-
-  const handleSpeak = () => {
-    speakText(`${current.word}. ${current.meaning}.`, 0.75);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    incrementWordsProgress();
   };
 
   const stopSpelling = useCallback(() => {
@@ -93,7 +80,35 @@ export default function WordsScreen() {
     stopSpeech();
   }, []);
 
+  const switchGroup = (idx: number) => {
+    stopSpelling();
+    setGroupIndex(idx);
+    setCurrentIndex(0);
+    animateCard();
+    Haptics.selectionAsync();
+  };
+
+  const goTo = useCallback(
+    (index: number) => {
+      stopSpelling();
+      const clamped = Math.max(0, Math.min(filteredWords.length - 1, index));
+      setCurrentIndex(clamped);
+      setActiveLetterIdx(-1);
+      animateCard();
+      Haptics.selectionAsync();
+    },
+    [filteredWords, stopSpelling]
+  );
+
+  const handleSpeak = () => {
+    if (!current) return;
+    speakText(`${current.word}. ${current.meaning}.`, 0.75);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    incrementWordsProgress();
+  };
+
   const startSpelling = useCallback(() => {
+    if (!current) return;
     spellingRef.current = true;
     setIsSpelling(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -121,6 +136,11 @@ export default function WordsScreen() {
   }, [current, incrementWordsProgress]);
 
   useEffect(() => {
+    setCurrentIndex(0);
+    stopSpelling();
+  }, [groupIndex]);
+
+  useEffect(() => {
     return () => {
       spellingRef.current = false;
       stopSpeech();
@@ -129,16 +149,50 @@ export default function WordsScreen() {
 
   const topPad = Platform.OS === 'web' ? 67 : insets.top;
 
+  if (!current) return null;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <Text style={[styles.title, { color: colors.text }]}>Twi Words</Text>
-        <View style={[styles.badge, { backgroundColor: colorPair[0] + '22' }]}>
-          <Text style={[styles.badgeText, { color: colorPair[0] }]}>
-            {currentIndex + 1} / {TWI_WORDS.length}
+        <View style={[styles.badge, { backgroundColor: groupColor + '22' }]}>
+          <Text style={[styles.badgeText, { color: groupColor }]}>
+            {safeIndex + 1} / {filteredWords.length}
           </Text>
         </View>
       </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabScroll}
+        contentContainerStyle={styles.tabRow}
+      >
+        {GROUP_TABS.map((tab, i) => (
+          <Pressable
+            key={tab.label}
+            onPress={() => switchGroup(i)}
+            style={[
+              styles.tabBtn,
+              {
+                backgroundColor: i === groupIndex ? tab.color : colors.muted,
+                borderColor: i === groupIndex ? tab.color : 'transparent',
+              },
+            ]}
+          >
+            <Text style={[styles.tabBtnText, { color: i === groupIndex ? '#fff' : colors.mutedForeground }]}>
+              {tab.label}
+            </Text>
+            <View style={[styles.tabCount, { backgroundColor: i === groupIndex ? 'rgba(255,255,255,0.25)' : colors.border }]}>
+              <Text style={[styles.tabCountText, { color: i === groupIndex ? '#fff' : colors.mutedForeground }]}>
+                {i === 3
+                  ? TWI_WORDS.filter(w => w.letters.length >= 5).length
+                  : TWI_WORDS.filter(w => w.letters.length === tab.count).length}
+              </Text>
+            </View>
+          </Pressable>
+        ))}
+      </ScrollView>
 
       <ScrollView
         contentContainerStyle={[
@@ -223,18 +277,18 @@ export default function WordsScreen() {
 
         <View style={styles.navRow}>
           <Pressable
-            onPress={() => goTo(currentIndex - 1)}
-            disabled={currentIndex === 0}
+            onPress={() => goTo(safeIndex - 1)}
+            disabled={safeIndex === 0}
             style={({ pressed }) => [
               styles.navBtn,
-              { backgroundColor: colors.card, opacity: currentIndex === 0 ? 0.35 : pressed ? 0.7 : 1 },
+              { backgroundColor: colors.card, opacity: safeIndex === 0 ? 0.35 : pressed ? 0.7 : 1 },
             ]}
           >
             <Feather name="chevron-left" size={30} color={colors.text} />
           </Pressable>
 
           <View style={styles.wordList}>
-            {TWI_WORDS.map((w, i) => (
+            {filteredWords.map((w, i) => (
               <Pressable
                 key={w.id}
                 onPress={() => goTo(i)}
@@ -242,14 +296,14 @@ export default function WordsScreen() {
                   styles.wordChip,
                   {
                     backgroundColor:
-                      i === currentIndex ? WORD_COLORS[i % WORD_COLORS.length][0] : colors.muted,
+                      i === safeIndex ? WORD_COLORS[i % WORD_COLORS.length][0] : colors.muted,
                   },
                 ]}
               >
                 <Text
                   style={[
                     styles.wordChipText,
-                    { color: i === currentIndex ? '#fff' : colors.mutedForeground },
+                    { color: i === safeIndex ? '#fff' : colors.mutedForeground },
                   ]}
                 >
                   {w.word}
@@ -259,13 +313,13 @@ export default function WordsScreen() {
           </View>
 
           <Pressable
-            onPress={() => goTo(currentIndex + 1)}
-            disabled={currentIndex === TWI_WORDS.length - 1}
+            onPress={() => goTo(safeIndex + 1)}
+            disabled={safeIndex === filteredWords.length - 1}
             style={({ pressed }) => [
               styles.navBtn,
               {
                 backgroundColor: colors.card,
-                opacity: currentIndex === TWI_WORDS.length - 1 ? 0.35 : pressed ? 0.7 : 1,
+                opacity: safeIndex === filteredWords.length - 1 ? 0.35 : pressed ? 0.7 : 1,
               },
             ]}
           >
@@ -284,15 +338,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 8,
   },
   title: { fontSize: 26, fontFamily: 'Inter_700Bold' },
   badge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
   badgeText: { fontSize: 14, fontFamily: 'Inter_600SemiBold' },
-  content: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, gap: 20 },
+  tabScroll: { flexGrow: 0 },
+  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 12 },
+  tabBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  tabBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
+  tabCount: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
+  tabCountText: { fontSize: 11, fontFamily: 'Inter_700Bold' },
+  content: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 4, gap: 16 },
   wordCard: {
-    width: 260,
-    height: 160,
+    width: 280,
+    height: 150,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
@@ -329,7 +397,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   lettersLabel: { fontSize: 12, fontFamily: 'Inter_500Medium', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 },
-  letterBoxRow: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
+  letterBoxRow: { flexDirection: 'row', gap: 10, justifyContent: 'center', flexWrap: 'wrap' },
   letterBox: {
     width: 44,
     height: 52,
@@ -354,13 +422,14 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   actionBtnText: { color: '#fff', fontSize: 15, fontFamily: 'Inter_600SemiBold' },
-  navRow: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%' },
+  navRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, width: '100%' },
   navBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,

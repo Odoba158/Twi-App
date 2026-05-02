@@ -75,6 +75,14 @@ export const TWI_NUMBERS: TwiNumber[] = Array.from({ length: 100 }, (_, i) => ({
 }));
 
 export const TWI_WORDS: TwiWord[] = [
+  { id: 'me',     word: 'Me',     letters: ['M','e'],                  meaning: 'I / Me',   category: 'People'  },
+  { id: 'wo',     word: 'Wo',     letters: ['W','o'],                  meaning: 'You',      category: 'People'  },
+  { id: 'no',     word: 'No',     letters: ['N','o'],                  meaning: 'It / That',category: 'Objects' },
+  { id: 'ko',     word: 'Ko',     letters: ['K','o'],                  meaning: 'Go',       category: 'Body'    },
+  { id: 'ba',     word: 'Ba',     letters: ['B','a'],                  meaning: 'Come',     category: 'Body'    },
+  { id: 'di',     word: 'Di',     letters: ['D','i'],                  meaning: 'Eat',      category: 'Food'    },
+  { id: 'da',     word: 'Da',     letters: ['D','a'],                  meaning: 'Sleep',    category: 'Body'    },
+  { id: 'ka',     word: 'Ka',     letters: ['K','a'],                  meaning: 'Say / Speak', category: 'People' },
   { id: 'fie',    word: 'Fie',    letters: ['F','i','e'],              meaning: 'House',    category: 'Places'  },
   { id: 'nsa',    word: 'Nsa',    letters: ['N','s','a'],              meaning: 'Hand',     category: 'Body'    },
   { id: 'dua',    word: 'Dua',    letters: ['D','u','a'],              meaning: 'Tree',     category: 'Nature'  },
