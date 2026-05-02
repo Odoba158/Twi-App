@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "6NuLrbpmymA7FAAxk9F2X"
+uri = "file://artifacts/twi-learner/assets/images/icon.png"
+type = "image"
+title = "twi app icon"
