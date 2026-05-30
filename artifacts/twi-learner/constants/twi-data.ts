@@ -45,7 +45,7 @@ export const TWI_ALPHABET: TwiLetter[] = [
   { id: 'N',   letter: 'N',  lowerCase: 'n',  twiName: 'Ɛnu',   exampleWord: 'Nipa',    meaning: 'Person',  color: LETTER_COLORS[12] },
   { id: 'O',   letter: 'O',  lowerCase: 'o',  twiName: 'O',     exampleWord: 'Obi',     meaning: 'Someone', color: LETTER_COLORS[13] },
   { id: 'OPS', letter: 'Ɔ',  lowerCase: 'ɔ',  twiName: 'Ɔ',     exampleWord: 'Ɔdɔ',     meaning: 'Love',    color: LETTER_COLORS[14] },
-  { id: 'P',   letter: 'P',  lowerCase: 'p',  twiName: 'Pi',    exampleWord: 'Pata',    meaning: 'Forgive', color: LETTER_COLORS[15] },
+  { id: 'P',   letter: 'P',  lowerCase: 'p',  twiName: 'Pi',    exampleWord: 'Fakyɛ',    meaning: 'Forgive', color: LETTER_COLORS[15] },
   { id: 'R',   letter: 'R',  lowerCase: 'r',  twiName: 'Ar',    exampleWord: 'Rofua',   meaning: 'Soap',    color: LETTER_COLORS[16] },
   { id: 'S',   letter: 'S',  lowerCase: 's',  twiName: 'Ɛsu',   exampleWord: 'Sunsum',  meaning: 'Spirit',  color: LETTER_COLORS[17] },
   { id: 'T',   letter: 'T',  lowerCase: 't',  twiName: 'Ti',    exampleWord: 'Tuo',     meaning: 'Gun',     color: LETTER_COLORS[18] },
