@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TWI_NUMBERS } from '@/constants/twi-data';
 import { useProgress } from '@/context/ProgressContext';
 import { useColors } from '@/hooks/useColors';
-import { speakLetter, speakText, stopSpeech } from '@/utils/speech';
+import { speakLetter, speakText, stopSpeech, playAudioForId } from '@/utils/speech';
 
 const RANGE_COLORS = [
   ['#E8961E', '#F5B942'],
@@ -95,26 +95,28 @@ export default function NumbersScreen() {
     spellingRef.current = true;
     setIsSpelling(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Play pre-recorded spelling audio (e.g. "1_spell")
+    playAudioForId(`${current.number}_spell`, () => {
+      spellingRef.current = false;
+      setIsSpelling(false);
+      setActiveLetterIdx(-1);
+    });
+
+    // Animate sequential highlight of letters
     const letters = current.twi.split('');
     let idx = 0;
-    const spellNext = () => {
+    const highlightNext = () => {
       if (!spellingRef.current || idx >= letters.length) {
-        spellingRef.current = false;
-        setIsSpelling(false);
-        setActiveLetterIdx(-1);
         return;
       }
       setActiveLetterIdx(idx);
-      speakLetter(
-        letters[idx],
-        () => {
-          idx++;
-          if (spellingRef.current) setTimeout(spellNext, 300);
-        },
-        0.65
-      );
+      idx++;
+      if (spellingRef.current && idx < letters.length) {
+        setTimeout(highlightNext, 450);
+      }
     };
-    spellNext();
+    highlightNext();
   }, [current]);
 
   const stopRecite = useCallback(() => {
@@ -203,23 +205,25 @@ export default function NumbersScreen() {
             <Text style={styles.actionBtnText}>Hear Word</Text>
           </Pressable>
 
-          <Pressable
-            onPress={isSpelling ? stopSpelling : startSpelling}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              {
-                backgroundColor: isSpelling ? '#E74C3C' : colorPair[1],
-                flex: 1,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <Feather name={isSpelling ? 'square' : 'type'} size={18} color="#fff" />
-            <Text style={styles.actionBtnText}>{isSpelling ? 'Stop' : 'Spell It'}</Text>
-          </Pressable>
+          {current.number <= 50 && (
+            <Pressable
+              onPress={isSpelling ? stopSpelling : startSpelling}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                {
+                  backgroundColor: isSpelling ? '#E74C3C' : colorPair[1],
+                  flex: 1,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <Feather name={isSpelling ? 'square' : 'type'} size={18} color="#fff" />
+              <Text style={styles.actionBtnText}>{isSpelling ? 'Stop' : 'Spell It'}</Text>
+            </Pressable>
+          )}
         </View>
 
-        {spellLetters.length > 0 && (
+        {current.number <= 50 && spellLetters.length > 0 && (
           <View style={[styles.lettersBox, { backgroundColor: colors.card }]}>
             <Text style={[styles.lettersLabel, { color: colors.mutedForeground }]}>Spelling</Text>
             <View style={styles.letterBoxRow}>

@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TWI_WORDS } from '@/constants/twi-data';
 import { useProgress } from '@/context/ProgressContext';
 import { useColors } from '@/hooks/useColors';
-import { speakLetter, speakText, stopSpeech } from '@/utils/speech';
+import { speakLetter, speakText, stopSpeech, playAudioForId } from '@/utils/speech';
 
 const WORD_COLORS = [
   ['#27AE60', '#2ECC71'],
@@ -40,7 +40,8 @@ const GROUP_TABS = [
   { label: '2 Letters', count: 2, color: '#E74C3C' },
   { label: '3 Letters', count: 3, color: '#E8961E' },
   { label: '4 Letters', count: 4, color: '#2980B9' },
-  { label: '5+ Letters', count: 5, color: '#27AE60' },
+  { label: '5 Letters', count: 5, color: '#27AE60' },
+  { label: '6 Letters', count: 6, color: '#8E44AD' },
 ];
 
 export default function WordsScreen() {
@@ -57,7 +58,7 @@ export default function WordsScreen() {
 
   const filteredWords = useMemo(() => {
     const g = GROUP_TABS[groupIndex];
-    if (g.count === 5) return TWI_WORDS.filter(w => w.letters.length >= 5);
+    if (g.count === 6) return TWI_WORDS.filter(w => w.letters.length >= 6);
     return TWI_WORDS.filter(w => w.letters.length === g.count);
   }, [groupIndex]);
 
@@ -102,7 +103,7 @@ export default function WordsScreen() {
 
   const handleSpeak = () => {
     if (!current) return;
-    speakText(`${current.word}. ${current.meaning}.`, 0.75);
+    playAudioForId(current.id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     incrementWordsProgress();
   };
@@ -129,7 +130,8 @@ export default function WordsScreen() {
           idx++;
           if (spellingRef.current) setTimeout(spellNext, 300);
         },
-        0.6
+        0.6,
+        true
       );
     };
     spellNext();
@@ -183,10 +185,10 @@ export default function WordsScreen() {
             <Text style={[styles.tabBtnText, { color: i === groupIndex ? '#fff' : colors.mutedForeground }]}>
               {tab.label}
             </Text>
-            <View style={[styles.tabCount, { backgroundColor: i === groupIndex ? 'rgba(255,255,255,0.25)' : colors.border }]}>
+             <View style={[styles.tabCount, { backgroundColor: i === groupIndex ? 'rgba(255,255,255,0.25)' : colors.border }]}>
               <Text style={[styles.tabCountText, { color: i === groupIndex ? '#fff' : colors.mutedForeground }]}>
-                {i === 3
-                  ? TWI_WORDS.filter(w => w.letters.length >= 5).length
+                {tab.count === 6
+                  ? TWI_WORDS.filter(w => w.letters.length >= 6).length
                   : TWI_WORDS.filter(w => w.letters.length === tab.count).length}
               </Text>
             </View>

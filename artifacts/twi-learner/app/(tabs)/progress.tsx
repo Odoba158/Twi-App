@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TWI_ALPHABET, TWI_NUMBERS, TWI_WORDS } from '@/constants/twi-data';
 import { useProgress } from '@/context/ProgressContext';
 import { useColors } from '@/hooks/useColors';
-import { speakText } from '@/utils/speech';
+import { speakText, playAudioForId } from '@/utils/speech';
 
 type QuizType = 'alphabet' | 'numbers' | 'words';
 
@@ -36,7 +36,7 @@ function generateAlphabetQuestions(count: number): Question[] {
       .map((a) => a.exampleWord);
     const options = [...wrong, item.exampleWord].sort(() => Math.random() - 0.5);
     return {
-      question: `Which word starts with the letter "${item.letter}"?`,
+      question: `In which word do you hear the sound "${item.twiName}"?`,
       answer: item.exampleWord,
       options,
     };
@@ -124,10 +124,14 @@ export default function ProgressScreen() {
 
       if (isCorrect) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        speakText('Correct!', 0.9);
+        playAudioForId('correct', () => {
+          playAudioForId('clapping');
+        });
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        speakText('Try again next time', 0.9);
+        playAudioForId('wrong', () => {
+          playAudioForId('wrong_buzz');
+        });
       }
 
       setTimeout(() => {
