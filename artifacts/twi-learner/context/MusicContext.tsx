@@ -31,7 +31,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const { sound } = await Audio.Sound.createAsync(
           require('../assets/audio/bg_music.m4a'),
-          { isLooping: true, volume: 0.2, shouldPlay: true }
+          { isLooping: true, volume: 0.05, shouldPlay: true }
         );
 
         if (isMounted) {
