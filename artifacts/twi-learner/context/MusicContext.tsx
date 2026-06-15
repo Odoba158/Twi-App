@@ -17,6 +17,12 @@ export const useMusic = () => useContext(MusicContext);
 export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const isPlayingRef = useRef(true);
+
+  // Keep the ref in sync with state so the AppState handler always reads current value
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   useEffect(() => {
     let isMounted = true;
@@ -48,7 +54,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (!soundRef.current) return;
-      if (nextAppState === 'active' && isPlaying) {
+      if (nextAppState === 'active' && isPlayingRef.current) {
         soundRef.current.playAsync();
       } else if (nextAppState.match(/inactive|background/)) {
         soundRef.current.pauseAsync();
@@ -87,3 +93,4 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     </MusicContext.Provider>
   );
 };
+
