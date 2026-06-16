@@ -21,6 +21,13 @@ export interface TwiWord {
   category: string;
 }
 
+export interface TwiPhrase {
+  id: string;
+  twi: string;
+  english: string;
+  category: string;
+}
+
 const LETTER_COLORS = [
   '#E74C3C', '#E67E22', '#F39C12', '#27AE60', '#16A085',
   '#2980B9', '#8E44AD', '#D35400', '#C0392B', '#1ABC9C',
@@ -119,4 +126,22 @@ export const TWI_WORDS: TwiWord[] = [
   { id: 'nsuo',   word: 'Nsuo',   letters: ['N','s','u','o'],          meaning: 'Water',    category: 'Nature'  },
   { id: 'ewiem',  word: 'Ewiem',  letters: ['E','w','i','e','m'],      meaning: 'Sky',      category: 'Nature'  },
   { id: 'asase',  word: 'Asaase',  letters: ['A','s','a','a','s','e'],  meaning: 'Earth',    category: 'Nature'  },
+];
+
+export const TWI_PHRASES: TwiPhrase[] = [
+  { id: 'p1', twi: 'Maakye', english: 'Good morning', category: 'Greetings' },
+  { id: 'p2', twi: 'Maaha', english: 'Good afternoon', category: 'Greetings' },
+  { id: 'p3', twi: 'Maadwo', english: 'Good evening', category: 'Greetings' },
+  { id: 'p4', twi: 'Ete sɛn?', english: 'How are you?', category: 'Greetings' },
+  { id: 'p5', twi: 'Me ho yɛ', english: 'I am fine', category: 'Greetings' },
+  { id: 'p6', twi: 'Medaase', english: 'Thank you', category: 'Courtesy' },
+  { id: 'p7', twi: 'Kafra', english: 'Sorry', category: 'Courtesy' },
+  { id: 'p8', twi: 'Mepaakyɛw', english: 'Please', category: 'Courtesy' },
+  { id: 'p9', twi: 'Aane', english: 'Yes', category: 'General' },
+  { id: 'p10', twi: 'Daabi', english: 'No', category: 'General' },
+  { id: 'p11', twi: 'Bra ha', english: 'Come here', category: 'Commands' },
+  { id: 'p12', twi: 'Kɔ', english: 'Go', category: 'Commands' },
+  { id: 'p13', twi: 'Tena ase', english: 'Sit down', category: 'Commands' },
+  { id: 'p14', twi: 'Sɔre', english: 'Stand up', category: 'Commands' },
+  { id: 'p15', twi: 'Nante yie', english: 'Safe journey / Goodbye', category: 'Greetings' },
 ];

@@ -60,6 +60,8 @@ const MODULES = [
   },
 ];
 
+import { ThemeSelector } from "@/components/ThemeSelector";
+
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -81,6 +83,9 @@ export default function HomeScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
+        <View style={{ position: 'absolute', top: topPad + 10, right: 20 }}>
+          <ThemeSelector />
+        </View>
         <Image
           source={require("@/assets/images/icon.png")}
           style={styles.appIcon}

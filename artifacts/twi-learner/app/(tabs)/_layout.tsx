@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { MusicToggle } from "@/components/MusicToggle";
 import { useUser } from "@/context/UserContext";
+import { useProgress } from "@/context/ProgressContext";
 
 function NativeTabLayout() {
   return (
@@ -30,6 +31,14 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="words">
         <Icon sf={{ default: "book", selected: "book.fill" }} />
         <Label>Words</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="phrases">
+        <Icon sf={{ default: "message", selected: "message.fill" }} />
+        <Label>Phrases</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="quiz">
+        <Icon sf={{ default: "gamecontroller", selected: "gamecontroller.fill" }} />
+        <Label>Games</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="progress">
         <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
@@ -123,6 +132,30 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
+        name="phrases"
+        options={{
+          title: "Phrases",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="message" tintColor={color} size={24} />
+            ) : (
+              <Feather name="message-circle" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="quiz"
+        options={{
+          title: "Games",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="gamecontroller" tintColor={color} size={24} />
+            ) : (
+              <Feather name="target" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
         name="progress"
         options={{
           title: "Progress",
@@ -140,6 +173,7 @@ function ClassicTabLayout() {
 
 function UserBadge() {
   const { user } = useUser();
+  const progress = useProgress();
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const topPad = Platform.OS === 'web' ? 20 : insets.top || 20;
@@ -162,6 +196,9 @@ function UserBadge() {
         <Text style={[userStyles.nameText, { color: colors.text }]} numberOfLines={1}>
           {user.name}
         </Text>
+        <View style={userStyles.streakBadge}>
+          <Text style={userStyles.streakText}>🔥 {progress.streakCount}</Text>
+        </View>
       </View>
     </View>
   );
@@ -177,7 +214,7 @@ const userStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 22,
-    paddingRight: 14,
+    paddingRight: 6,
     paddingLeft: 4,
     paddingVertical: 4,
     gap: 8,
@@ -203,7 +240,20 @@ const userStyles = StyleSheet.create({
   nameText: {
     fontSize: 13,
     fontFamily: 'Inter_600SemiBold',
-    maxWidth: 120,
+    maxWidth: 100,
+  },
+  streakBadge: {
+    backgroundColor: '#FFF4E5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+  },
+  streakText: {
+    fontSize: 12,
+    fontFamily: 'Inter_700Bold',
+    color: '#E65100',
   },
 });
 

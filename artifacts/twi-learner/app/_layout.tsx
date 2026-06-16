@@ -114,6 +114,8 @@ function AppGate() {
   );
 }
 
+import { ThemeProvider } from "@/context/ThemeContext";
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
@@ -134,11 +136,13 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <MusicProvider>
-            <UserProvider>
-              <AppGate />
-            </UserProvider>
-          </MusicProvider>
+          <ThemeProvider>
+            <MusicProvider>
+              <UserProvider>
+                <AppGate />
+              </UserProvider>
+            </MusicProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>

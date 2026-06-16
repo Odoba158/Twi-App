@@ -53,8 +53,12 @@ export default function WordsScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSpelling, setIsSpelling] = useState(false);
   const [activeLetterIdx, setActiveLetterIdx] = useState(-1);
+  const [isFlashcardMode, setIsFlashcardMode] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
+
   const spellingRef = useRef(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const flipAnim = useRef(new Animated.Value(0)).current;
 
   const filteredWords = useMemo(() => {
     const g = GROUP_TABS[groupIndex];
@@ -108,6 +112,27 @@ export default function WordsScreen() {
     incrementWordsProgress();
   };
 
+  const flipCard = () => {
+    if (isFlipped) {
+      Animated.spring(flipAnim, { toValue: 0, friction: 8, tension: 10, useNativeDriver: true }).start();
+    } else {
+      Animated.spring(flipAnim, { toValue: 1, friction: 8, tension: 10, useNativeDriver: true }).start();
+      handleSpeak();
+    }
+    setIsFlipped(!isFlipped);
+    Haptics.selectionAsync();
+  };
+
+  const frontInterpolate = flipAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg']
+  });
+  
+  const backInterpolate = flipAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['180deg', '360deg']
+  });
+
   const startSpelling = useCallback(() => {
     if (!current) return;
     spellingRef.current = true;
@@ -140,7 +165,9 @@ export default function WordsScreen() {
   useEffect(() => {
     setCurrentIndex(0);
     stopSpelling();
-  }, [groupIndex]);
+    setIsFlipped(false);
+    flipAnim.setValue(0);
+  }, [groupIndex, isFlashcardMode]);
 
   useEffect(() => {
     return () => {
@@ -157,10 +184,20 @@ export default function WordsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <Text style={[styles.title, { color: colors.text }]}>Twi Words</Text>
-        <View style={[styles.badge, { backgroundColor: groupColor + '22' }]}>
-          <Text style={[styles.badgeText, { color: groupColor }]}>
-            {safeIndex + 1} / {filteredWords.length}
-          </Text>
+        
+        <View style={styles.modeToggle}>
+          <Pressable 
+            style={[styles.modeBtn, !isFlashcardMode && { backgroundColor: colors.primary }]}
+            onPress={() => setIsFlashcardMode(false)}
+          >
+            <Feather name="list" size={16} color={!isFlashcardMode ? '#fff' : colors.mutedForeground} />
+          </Pressable>
+          <Pressable 
+            style={[styles.modeBtn, isFlashcardMode && { backgroundColor: colors.primary }]}
+            onPress={() => setIsFlashcardMode(true)}
+          >
+            <Feather name="layers" size={16} color={isFlashcardMode ? '#fff' : colors.mutedForeground} />
+          </Pressable>
         </View>
       </View>
 
@@ -203,79 +240,96 @@ export default function WordsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-          <LinearGradient
-            colors={colorPair as [string, string]}
-            style={styles.wordCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Text style={styles.wordText}>{current.word}</Text>
-            <View style={[styles.catBadge, { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
-              <Text style={styles.catText}>{current.category}</Text>
+        {isFlashcardMode ? (
+          <View style={styles.flashcardContainer}>
+            <Pressable onPress={flipCard}>
+              <Animated.View style={[styles.flashcardFront, { transform: [{ rotateY: frontInterpolate }] }, { backgroundColor: colors.card }]}>
+                <Text style={[styles.fcEnglishLabel, { color: colors.mutedForeground }]}>Translate to Twi</Text>
+                <Text style={[styles.fcEnglishWord, { color: colors.text }]}>{current.meaning}</Text>
+                <Feather name="refresh-cw" size={24} color={colors.mutedForeground} style={{ marginTop: 20 }} />
+                <Text style={{ color: colors.mutedForeground, marginTop: 8, fontFamily: 'Inter_500Medium' }}>Tap to flip</Text>
+              </Animated.View>
+
+              <Animated.View style={[styles.flashcardBack, { transform: [{ rotateY: backInterpolate }] }]}>
+                <LinearGradient
+                  colors={colorPair as [string, string]}
+                  style={styles.flashcardGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Text style={styles.fcTwiWord}>{current.word}</Text>
+                  <View style={[styles.catBadge, { backgroundColor: 'rgba(255,255,255,0.3)', marginTop: 16 }]}>
+                    <Text style={styles.catText}>{current.category}</Text>
+                  </View>
+                  <Pressable style={styles.fcSpeakBtn} onPress={handleSpeak}>
+                    <Feather name="volume-2" size={24} color={colorPair[0]} />
+                  </Pressable>
+                </LinearGradient>
+              </Animated.View>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+              <LinearGradient
+                colors={colorPair as [string, string]}
+                style={styles.wordCard}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.wordText}>{current.word}</Text>
+                <View style={[styles.catBadge, { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
+                  <Text style={styles.catText}>{current.category}</Text>
+                </View>
+              </LinearGradient>
+            </Animated.View>
+
+            <View style={[styles.meaningBox, { backgroundColor: colors.card }]}>
+              <Text style={[styles.meaningLabel, { color: colors.mutedForeground }]}>Meaning</Text>
+              <Text style={[styles.meaningText, { color: colors.text }]}>{current.meaning}</Text>
             </View>
-          </LinearGradient>
-        </Animated.View>
 
-        <View style={[styles.meaningBox, { backgroundColor: colors.card }]}>
-          <Text style={[styles.meaningLabel, { color: colors.mutedForeground }]}>Meaning</Text>
-          <Text style={[styles.meaningText, { color: colors.text }]}>{current.meaning}</Text>
-        </View>
+            <View style={[styles.lettersBox, { backgroundColor: colors.card }]}>
+              <Text style={[styles.lettersLabel, { color: colors.mutedForeground }]}>Spelling</Text>
+              <View style={styles.letterBoxRow}>
+                {current.letters.map((letter, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.letterBox,
+                      {
+                        backgroundColor: i === activeLetterIdx ? colorPair[0] : colors.muted,
+                        borderColor: i === activeLetterIdx ? colorPair[0] : colors.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.letterBoxText,
+                        { color: i === activeLetterIdx ? '#fff' : colors.text },
+                      ]}
+                    >
+                      {letter}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
 
-        <View style={[styles.lettersBox, { backgroundColor: colors.card }]}>
-          <Text style={[styles.lettersLabel, { color: colors.mutedForeground }]}>Spelling</Text>
-          <View style={styles.letterBoxRow}>
-            {current.letters.map((letter, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.letterBox,
-                  {
-                    backgroundColor: i === activeLetterIdx ? colorPair[0] : colors.muted,
-                    borderColor: i === activeLetterIdx ? colorPair[0] : colors.border,
-                  },
+            <View style={styles.actionRow}>
+              <Pressable
+                onPress={handleSpeak}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  { backgroundColor: colorPair[0], flex: 1, opacity: pressed ? 0.8 : 1 },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.letterBoxText,
-                    { color: i === activeLetterIdx ? '#fff' : colors.text },
-                  ]}
-                >
-                  {letter}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.actionRow}>
-          <Pressable
-            onPress={handleSpeak}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              { backgroundColor: colorPair[0], flex: 1, opacity: pressed ? 0.8 : 1 },
-            ]}
-          >
-            <Feather name="volume-2" size={18} color="#fff" />
-            <Text style={styles.actionBtnText}>Hear Word</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={isSpelling ? stopSpelling : startSpelling}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              {
-                backgroundColor: isSpelling ? '#E74C3C' : colorPair[1],
-                flex: 1,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <Feather name={isSpelling ? 'square' : 'type'} size={18} color="#fff" />
-            <Text style={styles.actionBtnText}>{isSpelling ? 'Stop' : 'Spell It'}</Text>
-          </Pressable>
-        </View>
+                <Feather name="volume-2" size={18} color="#fff" />
+                <Text style={styles.actionBtnText}>Hear Word</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
 
         <View style={styles.navRow}>
           <Pressable
@@ -441,4 +495,61 @@ const styles = StyleSheet.create({
   wordList: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
   wordChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   wordChipText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
+  modeToggle: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 20, padding: 4 },
+  modeBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 16 },
+  flashcardContainer: {
+    width: 300,
+    height: 400,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flashcardFront: {
+    width: 300,
+    height: 400,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backfaceVisibility: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  flashcardBack: {
+    width: 300,
+    height: 400,
+    borderRadius: 30,
+    position: 'absolute',
+    top: 0,
+    backfaceVisibility: 'hidden',
+  },
+  flashcardGradient: {
+    flex: 1,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  fcEnglishLabel: { fontSize: 16, fontFamily: 'Inter_500Medium', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 },
+  fcEnglishWord: { fontSize: 42, fontFamily: 'Inter_700Bold', textAlign: 'center', paddingHorizontal: 20 },
+  fcTwiWord: { fontSize: 56, fontFamily: 'Inter_700Bold', color: '#fff' },
+  fcSpeakBtn: {
+    marginTop: 32,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  }
 });
