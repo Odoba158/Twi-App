@@ -131,7 +131,7 @@ export default function WordsScreen() {
           if (spellingRef.current) setTimeout(spellNext, 800);
         },
         0.6,
-        true
+        false
       );
     };
     spellNext();
