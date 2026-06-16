@@ -8,14 +8,17 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { LoginScreen } from "@/components/LoginScreen";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { ProgressProvider } from "@/context/ProgressContext";
 import { MusicProvider } from "@/context/MusicContext";
+import { UserProvider, useUser } from "@/context/UserContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,6 +29,50 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
     </Stack>
+  );
+}
+
+/** Gates the app behind login → loading → main content */
+function AppGate() {
+  const { user, isLoaded, login } = useUser();
+  const [showLoading, setShowLoading] = useState(false);
+  const [appReady, setAppReady] = useState(false);
+
+  // If user was already logged in from a previous session, show loading bar then enter
+  useEffect(() => {
+    if (isLoaded && user && !appReady) {
+      setShowLoading(true);
+    }
+  }, [isLoaded, user]);
+
+  if (!isLoaded) return null;
+
+  // Not logged in yet — show login screen
+  if (!user) {
+    return (
+      <LoginScreen
+        onLogin={async (name, school) => {
+          await login({ name, school: school || undefined });
+          setShowLoading(true);
+        }}
+      />
+    );
+  }
+
+  // Just logged in or returning user — show loading bar
+  if (showLoading && !appReady) {
+    return <LoadingScreen onFinish={() => setAppReady(true)} />;
+  }
+
+  // App is ready — render the main content
+  return (
+    <ProgressProvider>
+      <GestureHandlerRootView>
+        <KeyboardProvider>
+          <RootLayoutNav />
+        </KeyboardProvider>
+      </GestureHandlerRootView>
+    </ProgressProvider>
   );
 }
 
@@ -50,13 +97,9 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <MusicProvider>
-            <ProgressProvider>
-              <GestureHandlerRootView>
-                <KeyboardProvider>
-                  <RootLayoutNav />
-                </KeyboardProvider>
-              </GestureHandlerRootView>
-            </ProgressProvider>
+            <UserProvider>
+              <AppGate />
+            </UserProvider>
           </MusicProvider>
         </QueryClientProvider>
       </ErrorBoundary>

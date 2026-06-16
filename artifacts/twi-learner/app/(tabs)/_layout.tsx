@@ -5,10 +5,12 @@ import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { Platform, StyleSheet, Text, View, useColorScheme } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import { MusicToggle } from "@/components/MusicToggle";
+import { useUser } from "@/context/UserContext";
 
 function NativeTabLayout() {
   return (
@@ -136,10 +138,80 @@ function ClassicTabLayout() {
   );
 }
 
+function UserBadge() {
+  const { user } = useUser();
+  const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const topPad = Platform.OS === 'web' ? 20 : insets.top || 20;
+
+  if (!user) return null;
+
+  const initials = user.name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <View style={[userStyles.container, { top: topPad }]} pointerEvents="none">
+      <View style={[userStyles.badge, { backgroundColor: colors.card }]}>
+        <View style={userStyles.avatar}>
+          <Text style={userStyles.avatarText}>{initials}</Text>
+        </View>
+        <Text style={[userStyles.nameText, { color: colors.text }]} numberOfLines={1}>
+          {user.name}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const userStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 999,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 22,
+    paddingRight: 14,
+    paddingLeft: 4,
+    paddingVertical: 4,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E8961E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 13,
+    fontFamily: 'Inter_700Bold',
+  },
+  nameText: {
+    fontSize: 13,
+    fontFamily: 'Inter_600SemiBold',
+    maxWidth: 120,
+  },
+});
+
 export default function TabLayout() {
   return (
     <>
       {isLiquidGlassAvailable() ? <NativeTabLayout /> : <ClassicTabLayout />}
+      <UserBadge />
       <MusicToggle />
     </>
   );
