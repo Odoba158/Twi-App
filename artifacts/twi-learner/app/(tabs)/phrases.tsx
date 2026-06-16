@@ -97,7 +97,8 @@ export default function PhrasesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    paddingHorizontal: 20,
+    paddingLeft: 20,
+    paddingRight: 76,
     paddingBottom: 16,
   },
   title: { fontSize: 28, fontFamily: 'Inter_700Bold', marginBottom: 4 },

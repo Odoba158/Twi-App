@@ -83,7 +83,7 @@ export default function HomeScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <View style={{ position: 'absolute', top: topPad + 10, right: 20 }}>
+        <View style={{ position: 'absolute', top: topPad + 2, right: 76, zIndex: 999 }}>
           <ThemeSelector />
         </View>
         <Image

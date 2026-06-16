@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { fontSize: 16, fontFamily: 'Inter_600SemiBold' },
   
-  header: { paddingHorizontal: 24, paddingBottom: 20 },
+  header: { paddingLeft: 24, paddingRight: 76, paddingBottom: 20 },
   qCounter: { fontSize: 14, fontFamily: 'Inter_600SemiBold', marginBottom: 8 },
   progressTrack: { height: 8, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4 },
