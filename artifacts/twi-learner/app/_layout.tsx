@@ -8,7 +8,8 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -32,9 +33,40 @@ function RootLayoutNav() {
   );
 }
 
+/** Wraps the main app and resets a 90-second logout timer on every touch */
+function InactivityWrapper({ children, onLogout }: { children: React.ReactNode; onLogout: () => void }) {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetTimer = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      onLogout();
+    }, 90000); // 1.5 minutes
+  }, [onLogout]);
+
+  useEffect(() => {
+    resetTimer();
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [resetTimer]);
+
+  return (
+    <View
+      style={{ flex: 1 }}
+      onStartShouldSetResponderCapture={() => {
+        resetTimer();
+        return false; // let the touch pass through to children
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+
 /** Gates the app behind login → loading → main content */
 function AppGate() {
-  const { user, isLoaded, login } = useUser();
+  const { user, isLoaded, login, logout } = useUser();
   const [showLoading, setShowLoading] = useState(false);
   const [appReady, setAppReady] = useState(false);
 
@@ -69,7 +101,13 @@ function AppGate() {
     <ProgressProvider>
       <GestureHandlerRootView>
         <KeyboardProvider>
-          <RootLayoutNav />
+          <InactivityWrapper onLogout={() => {
+            setAppReady(false);
+            setShowLoading(false);
+            logout();
+          }}>
+            <RootLayoutNav />
+          </InactivityWrapper>
         </KeyboardProvider>
       </GestureHandlerRootView>
     </ProgressProvider>
