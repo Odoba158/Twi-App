@@ -40,13 +40,13 @@ export function LoadingScreen({ onFinish }: LoadingScreenProps) {
           toValue: 1,
           duration: 800,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 0.6,
           duration: 800,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     ).start();
@@ -55,6 +55,8 @@ export function LoadingScreen({ onFinish }: LoadingScreenProps) {
   // Slow progress: ~8 seconds total
   useEffect(() => {
     let current = 0;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    
     const interval = setInterval(() => {
       const increment = current < 20 ? 1 : current < 50 ? 1.5 : current < 80 ? 2 : current < 95 ? 1.5 : 1;
       current = Math.min(current + increment, 100);
@@ -70,11 +72,14 @@ export function LoadingScreen({ onFinish }: LoadingScreenProps) {
 
       if (rounded >= 100) {
         clearInterval(interval);
-        setTimeout(onFinish, 600);
+        timeoutId = setTimeout(onFinish, 600);
       }
     }, 120);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   // Loading tips that rotate
