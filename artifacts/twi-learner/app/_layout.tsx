@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { View } from "react-native";
+import { View, AppState, AppStateStatus, PanResponder } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -36,6 +36,7 @@ function RootLayoutNav() {
 /** Wraps the main app and resets a 90-second logout timer on every touch */
 function InactivityWrapper({ children, onLogout }: { children: React.ReactNode; onLogout: () => void }) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const backgroundTimeRef = useRef<number | null>(null);
 
   const resetTimer = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -46,19 +47,44 @@ function InactivityWrapper({ children, onLogout }: { children: React.ReactNode; 
 
   useEffect(() => {
     resetTimer();
+
+    const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
+      if (nextAppState === "background" || nextAppState === "inactive") {
+        backgroundTimeRef.current = Date.now();
+      } else if (nextAppState === "active") {
+        if (backgroundTimeRef.current) {
+          const timeElapsed = Date.now() - backgroundTimeRef.current;
+          if (timeElapsed >= 90000) {
+            onLogout();
+          } else {
+            resetTimer();
+          }
+        }
+        backgroundTimeRef.current = null;
+      }
+    });
+
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      subscription.remove();
     };
-  }, [resetTimer]);
+  }, [resetTimer, onLogout]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponderCapture: () => {
+        resetTimer();
+        return false;
+      },
+      onMoveShouldSetPanResponderCapture: () => {
+        resetTimer();
+        return false;
+      },
+    })
+  ).current;
 
   return (
-    <View
-      style={{ flex: 1 }}
-      onStartShouldSetResponderCapture={() => {
-        resetTimer();
-        return false; // let the touch pass through to children
-      }}
-    >
+    <View style={{ flex: 1 }} {...panResponder.panHandlers}>
       {children}
     </View>
   );
