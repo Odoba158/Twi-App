@@ -128,7 +128,7 @@ export default function WordsScreen() {
         current.letters[idx],
         () => {
           idx++;
-          if (spellingRef.current) setTimeout(spellNext, 300);
+          if (spellingRef.current) setTimeout(spellNext, 800);
         },
         0.6,
         true

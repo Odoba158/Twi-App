@@ -55,7 +55,7 @@ export const TWI_ALPHABET: TwiLetter[] = [
 ];
 
 const UNITS = ['', 'Baako', 'Mmienu', 'Mmiɛnsa', 'Nnan', 'Enum', 'Nsia', 'Nson', 'Nwɔtwe', 'Nkron'];
-const TENS = ['', 'Du', 'Aduonu', 'Aduasa', 'Aduannan', 'Aduonum', 'Aduosia', 'Aduoson', 'Aduowɔtwe', 'Aduokron'];
+const TENS = ['', 'Du', 'Aduonu', 'Aduasa', 'Aduanan', 'Aduonum', 'Aduosia', 'Aduoson', 'Aduowɔtwe', 'Aduokron'];
 
 function buildTwiWord(n: number): string {
   if (n === 100) return 'Ɔha';
@@ -63,7 +63,7 @@ function buildTwiWord(n: number): string {
   if (n === 10) return 'Du';
   
   const getSuffix = (u: number) => {
-    if (u === 4) return 'nnan';
+    if (u === 4) return 'nan';
     if (u === 5) return 'num';
     return UNITS[u].toLowerCase();
   };
@@ -92,7 +92,7 @@ export const TWI_WORDS: TwiWord[] = [
   { id: 'fie',    word: 'Fie',    letters: ['F','i','e'],              meaning: 'House',    category: 'Places'  },
   { id: 'nsa',    word: 'Nsa',    letters: ['N','s','a'],              meaning: 'Hand',     category: 'Body'    },
   { id: 'dua',    word: 'Dua',    letters: ['D','u','a'],              meaning: 'Tree',     category: 'Nature'  },
-  { id: 'ewi',    word: 'Ewi',    letters: ['E','w','i'],              meaning: 'Theft',    category: 'Animals' },
+  { id: 'ewi',    word: 'Ewi',    letters: ['E','w','i'],              meaning: 'Theft',    category: 'Actions' },
   { id: 'obi',    word: 'Obi',    letters: ['O','b','i'],              meaning: 'Someone',  category: 'People'  },
   { id: 'obaa',   word: 'Obaa',   letters: ['O','b','a','a'],          meaning: 'Woman',    category: 'People'  },
   { id: 'abaa',   word: 'Abaa',   letters: ['A','b','a','a'],          meaning: 'Stick',    category: 'Objects' },
