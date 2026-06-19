@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Audio } from 'expo-av';
@@ -9,6 +9,8 @@ import { AUDIO_MAP } from '@/constants/audio-map';
  * Creates its own Sound instance so it's independent of the shared speech cache.
  */
 export function useIntroduction(delayMs = 500) {
+  const [isPlaying, setIsPlaying] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       let sound: Audio.Sound | null = null;
@@ -16,17 +18,22 @@ export function useIntroduction(delayMs = 500) {
 
       const play = async () => {
         try {
+          setIsPlaying(true);
           await new Promise(resolve => setTimeout(resolve, delayMs));
           if (cancelled) return;
 
           const audioRes = AUDIO_MAP['introduction'];
-          if (!audioRes) return;
+          if (!audioRes) {
+            setIsPlaying(false);
+            return;
+          }
 
           const created = await Audio.Sound.createAsync(audioRes, {
             shouldPlay: true,
           });
           if (cancelled) {
             created.sound.unloadAsync();
+            setIsPlaying(false);
             return;
           }
           sound = created.sound;
@@ -34,10 +41,11 @@ export function useIntroduction(delayMs = 500) {
             if (status.isLoaded && status.didJustFinish) {
               sound?.unloadAsync();
               sound = null;
+              setIsPlaying(false);
             }
           });
         } catch (e) {
-          // silently skip if intro audio is missing or fails
+          setIsPlaying(false);
         }
       };
 
@@ -46,7 +54,10 @@ export function useIntroduction(delayMs = 500) {
       return () => {
         cancelled = true;
         sound?.stopAsync().then(() => sound?.unloadAsync());
+        setIsPlaying(false);
       };
     }, [delayMs])
   );
+
+  return { isIntroPlaying: isPlaying };
 }

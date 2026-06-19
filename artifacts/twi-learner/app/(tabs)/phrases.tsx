@@ -18,7 +18,7 @@ import { playAudioForId } from '@/utils/speech';
 
 export default function PhrasesScreen() {
   const colors = useColors();
-  useIntroduction();
+  const { isIntroPlaying } = useIntroduction();
   const insets = useSafeAreaInsets();
   const [activePhrase, setActivePhrase] = useState<string | null>(null);
   
@@ -39,7 +39,10 @@ export default function PhrasesScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View 
+      style={[styles.container, { backgroundColor: colors.background, opacity: isIntroPlaying ? 0.6 : 1 }]} 
+      pointerEvents={isIntroPlaying ? 'none' : 'auto'}
+    >
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <Text style={[styles.title, { color: colors.text }]}>Everyday Phrases</Text>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>

@@ -47,7 +47,7 @@ const GROUP_TABS = [
 
 export default function WordsScreen() {
   const colors = useColors();
-  useIntroduction();
+  const { isIntroPlaying } = useIntroduction();
   const insets = useSafeAreaInsets();
   const { incrementWordsProgress } = useProgress();
 
@@ -157,7 +157,10 @@ export default function WordsScreen() {
   if (!current) return null;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View 
+      style={[styles.container, { backgroundColor: colors.background, opacity: isIntroPlaying ? 0.6 : 1 }]} 
+      pointerEvents={isIntroPlaying ? 'none' : 'auto'}
+    >
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <Text style={[styles.title, { color: colors.text }]}>Twi Words</Text>
         

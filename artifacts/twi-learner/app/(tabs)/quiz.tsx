@@ -24,7 +24,7 @@ interface Question {
 
 export default function QuizScreen() {
   const colors = useColors();
-  useIntroduction();
+  const { isIntroPlaying } = useIntroduction();
   const insets = useSafeAreaInsets();
   const { addQuizScore } = useProgress();
   const router = useRouter();
@@ -196,7 +196,10 @@ export default function QuizScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View 
+      style={[styles.container, { backgroundColor: colors.background, opacity: isIntroPlaying ? 0.6 : 1 }]} 
+      pointerEvents={isIntroPlaying ? 'none' : 'auto'}
+    >
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <Text style={[styles.qCounter, { color: colors.mutedForeground }]}>Question {currentIndex + 1} of 5</Text>
         <View style={styles.progressTrack}>

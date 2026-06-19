@@ -21,7 +21,7 @@ import { speakLetter, stopSpeech, playAudioForId } from '@/utils/speech';
 
 export default function AlphabetScreen() {
   const colors = useColors();
-  useIntroduction();
+  const { isIntroPlaying } = useIntroduction();
   const insets = useSafeAreaInsets();
   const { updateAlphabetProgress } = useProgress();
 
@@ -101,7 +101,10 @@ export default function AlphabetScreen() {
   const topPad = Platform.OS === 'web' ? 67 : insets.top;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View 
+      style={[styles.container, { backgroundColor: colors.background, opacity: isIntroPlaying ? 0.6 : 1 }]} 
+      pointerEvents={isIntroPlaying ? 'none' : 'auto'}
+    >
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <Text style={[styles.title, { color: colors.text }]}>Twi Alphabet</Text>
         <View style={[styles.badge, { backgroundColor: current.color + '22' }]}>
