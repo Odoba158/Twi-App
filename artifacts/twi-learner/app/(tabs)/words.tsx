@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TWI_WORDS } from '@/constants/twi-data';
 import { useProgress } from '@/context/ProgressContext';
 import { useColors } from '@/hooks/useColors';
-import { speakLetter, speakText, stopSpeech, playAudioForId } from '@/utils/speech';
+import { speakText, stopSpeech, playAudioForId } from '@/utils/speech';
 
 const WORD_COLORS = [
   ['#27AE60', '#2ECC71'],
@@ -127,54 +127,12 @@ export default function WordsScreen() {
     outputRange: ['180deg', '360deg']
   });
 
-  // Spell letters one by one — highlight fires exactly when each audio starts
-  const startSpelling = useCallback((wordToSpell: typeof current) => {
-    if (!wordToSpell) return;
-    spellingRef.current = true;
-    setIsSpelling(true);
-
-    let idx = 0;
-    const spellNext = () => {
-      if (!spellingRef.current || idx >= wordToSpell.letters.length) {
-        spellingRef.current = false;
-        setIsSpelling(false);
-        setActiveLetterIdx(-1);
-        return;
-      }
-      // Highlight fires here — exactly when this letter's audio is about to start
-      const letterIdx = idx;
-      setActiveLetterIdx(letterIdx);
-      speakLetter(
-        wordToSpell.letters[letterIdx],
-        () => {
-          idx++;
-          if (spellingRef.current) setTimeout(spellNext, 50);
-        },
-        0.6,
-        false
-      );
-    };
-    spellNext();
-  }, []);
-
-  // Auto-play: speak word name first, then spell letters automatically
-  const autoSpellWord = useCallback((wordObj: typeof current) => {
-    if (!wordObj || isFlashcardMode) return;
-    stopSpelling();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    incrementWordsProgress();
-    // 1. Speak the whole word first
-    playAudioForId(wordObj.id, () => {
-      // Immediately after word plays, begin letter-by-letter spelling
-      if (spellingRef.current === false) {
-        startSpelling(wordObj);
-      }
-    });
-  }, [isFlashcardMode, incrementWordsProgress, startSpelling, stopSpelling]);
-
   const handleSpeak = () => {
     if (!current) return;
-    autoSpellWord(current);
+    stopSpelling();
+    playAudioForId(current.id);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    incrementWordsProgress();
   };
 
 
