@@ -35,11 +35,19 @@ const SPELL_RANGES = [
 ];
 
 const RECITE_RANGES = [
+  { label: '1–10',   start: 0,  end: 9  },
   { label: '1–20',   start: 0,  end: 19 },
-  { label: '21–40',  start: 20, end: 39 },
-  { label: '41–60',  start: 40, end: 59 },
-  { label: '61–80',  start: 60, end: 79 },
-  { label: '81–100', start: 80, end: 99 },
+  { label: '1–50',   start: 0,  end: 49 },
+  { label: '1–100',  start: 0,  end: 99 },
+  { label: '11–20',  start: 10, end: 19 },
+  { label: '21–30',  start: 20, end: 29 },
+  { label: '31–40',  start: 30, end: 39 },
+  { label: '41–50',  start: 40, end: 49 },
+  { label: '51–60',  start: 50, end: 59 },
+  { label: '61–70',  start: 60, end: 69 },
+  { label: '71–80',  start: 70, end: 79 },
+  { label: '81–90',  start: 80, end: 89 },
+  { label: '91–100', start: 90, end: 99 },
 ];
 
 export default function NumbersScreen() {
@@ -80,7 +88,7 @@ export default function NumbersScreen() {
   );
 
   const handleSpeak = () => {
-    speakText(`${current.number}. ${current.twi}.`, 0.75);
+    playAudioForId(`${current.number}`);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
@@ -143,14 +151,10 @@ export default function NumbersScreen() {
       updateNumbersProgress(idx);
       animateCard();
       const item = TWI_NUMBERS[idx];
-      speakLetter(
-        `${item.number}. ${item.twi}`,
-        () => {
-          idx++;
-          if (recitingRef.current) setTimeout(reciteNext, 600);
-        },
-        0.75
-      );
+      playAudioForId(`${item.number}`, () => {
+        idx++;
+        if (recitingRef.current) setTimeout(reciteNext, 400);
+      });
     };
     reciteNext();
   }, [reciteRangeIndex, updateNumbersProgress, stopSpelling]);
@@ -312,10 +316,10 @@ export default function NumbersScreen() {
               {RECITE_RANGES.map((r, i) => (
                 <Pressable
                   key={r.label}
-                  onPress={() => setReciteRangeIndex(i)}
+                  onPress={() => { if (!isReciting) setReciteRangeIndex(i); }}
                   style={[
                     styles.rangeBtn,
-                    { backgroundColor: i === reciteRangeIndex ? RANGE_COLORS[i][0] : colors.muted },
+                    { backgroundColor: i === reciteRangeIndex ? RANGE_COLORS[i % RANGE_COLORS.length][0] : colors.muted },
                   ]}
                 >
                   <Text style={[styles.rangeBtnText, { color: i === reciteRangeIndex ? '#fff' : colors.mutedForeground }]}>
@@ -330,7 +334,7 @@ export default function NumbersScreen() {
             style={({ pressed }) => [
               styles.reciteBtn,
               {
-                backgroundColor: isReciting ? '#E74C3C' : RANGE_COLORS[reciteRangeIndex][0],
+                backgroundColor: isReciting ? '#E74C3C' : RANGE_COLORS[reciteRangeIndex % RANGE_COLORS.length][0],
                 opacity: pressed ? 0.85 : 1,
                 marginTop: 12,
               },
@@ -338,7 +342,7 @@ export default function NumbersScreen() {
           >
             <Feather name={isReciting ? 'square' : 'play-circle'} size={20} color="#fff" />
             <Text style={styles.reciteBtnText}>
-              {isReciting ? 'Stop Reciting' : `Auto Recite ${RECITE_RANGES[reciteRangeIndex].label}`}
+              {isReciting ? 'Stop' : `▶ Auto Recite ${RECITE_RANGES[reciteRangeIndex].label}`}
             </Text>
           </Pressable>
         </View>

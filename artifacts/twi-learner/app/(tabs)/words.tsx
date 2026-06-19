@@ -148,7 +148,7 @@ export default function WordsScreen() {
         wordToSpell.letters[letterIdx],
         () => {
           idx++;
-          if (spellingRef.current) setTimeout(spellNext, 300);
+          if (spellingRef.current) setTimeout(spellNext, 50);
         },
         0.6,
         false
@@ -165,9 +165,9 @@ export default function WordsScreen() {
     incrementWordsProgress();
     // 1. Speak the whole word first
     playAudioForId(wordObj.id, () => {
-      // 2. After word plays, begin letter-by-letter spelling with synced highlights
+      // Immediately after word plays, begin letter-by-letter spelling
       if (spellingRef.current === false) {
-        setTimeout(() => startSpelling(wordObj), 400);
+        startSpelling(wordObj);
       }
     });
   }, [isFlashcardMode, incrementWordsProgress, startSpelling, stopSpelling]);
