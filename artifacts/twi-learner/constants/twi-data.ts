@@ -92,7 +92,7 @@ export const TWI_WORDS: TwiWord[] = [
   { id: 'wo',     word: 'Wo',     letters: ['W','o'],                  meaning: 'You',      category: 'People'  },
   { id: 'no',     word: 'No',     letters: ['N','o'],                  meaning: 'It / That',category: 'Objects' },
   { id: 'ko',     word: 'Kɔ',     letters: ['K','ɔ'],                  meaning: 'Go',       category: 'Body'    },
-  { id: 'ba',     word: 'Ba',     letters: ['B','a'],                  meaning: 'Come',     category: 'Body'    },
+  { id: 'ba',     word: 'Ba',     letters: ['B','a'],                  meaning: 'Child',    category: 'People'  },
   { id: 'di',     word: 'Di',     letters: ['D','i'],                  meaning: 'Eat',      category: 'Food'    },
   { id: 'da',     word: 'Da',     letters: ['D','a'],                  meaning: 'Sleep',    category: 'Body'    },
   { id: 'ka',     word: 'Ka',     letters: ['K','a'],                  meaning: 'Say / Speak', category: 'People' },

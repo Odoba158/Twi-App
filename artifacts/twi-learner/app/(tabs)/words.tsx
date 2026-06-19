@@ -95,22 +95,15 @@ export default function WordsScreen() {
 
   const goTo = useCallback(
     (index: number) => {
-      stopSpelling();
       const clamped = Math.max(0, Math.min(filteredWords.length - 1, index));
       setCurrentIndex(clamped);
       setActiveLetterIdx(-1);
       animateCard();
       Haptics.selectionAsync();
     },
-    [filteredWords, stopSpelling]
+    [filteredWords]
   );
 
-  const handleSpeak = () => {
-    if (!current) return;
-    playAudioForId(current.id);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    incrementWordsProgress();
-  };
 
   const flipCard = () => {
     if (isFlipped) {
@@ -133,34 +126,65 @@ export default function WordsScreen() {
     outputRange: ['180deg', '360deg']
   });
 
-  const startSpelling = useCallback(() => {
-    if (!current) return;
+  // Spell letters one by one — highlight fires exactly when each audio starts
+  const startSpelling = useCallback((wordToSpell: typeof current) => {
+    if (!wordToSpell) return;
     spellingRef.current = true;
     setIsSpelling(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    incrementWordsProgress();
 
     let idx = 0;
     const spellNext = () => {
-      if (!spellingRef.current || idx >= current.letters.length) {
+      if (!spellingRef.current || idx >= wordToSpell.letters.length) {
         spellingRef.current = false;
         setIsSpelling(false);
         setActiveLetterIdx(-1);
         return;
       }
-      setActiveLetterIdx(idx);
+      // Highlight fires here — exactly when this letter's audio is about to start
+      const letterIdx = idx;
+      setActiveLetterIdx(letterIdx);
       speakLetter(
-        current.letters[idx],
+        wordToSpell.letters[letterIdx],
         () => {
           idx++;
-          if (spellingRef.current) setTimeout(spellNext, 800);
+          if (spellingRef.current) setTimeout(spellNext, 300);
         },
         0.6,
         false
       );
     };
     spellNext();
-  }, [current, incrementWordsProgress]);
+  }, []);
+
+  // Auto-play: speak word name first, then spell letters automatically
+  const autoSpellWord = useCallback((wordObj: typeof current) => {
+    if (!wordObj || isFlashcardMode) return;
+    stopSpelling();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    incrementWordsProgress();
+    // 1. Speak the whole word first
+    playAudioForId(wordObj.id, () => {
+      // 2. After word plays, begin letter-by-letter spelling with synced highlights
+      if (spellingRef.current === false) {
+        setTimeout(() => startSpelling(wordObj), 400);
+      }
+    });
+  }, [isFlashcardMode, incrementWordsProgress, startSpelling, stopSpelling]);
+
+  const handleSpeak = () => {
+    if (!current) return;
+    autoSpellWord(current);
+  };
+
+  // Auto-spell whenever the current word changes (navigation or group switch)
+  useEffect(() => {
+    if (isFlashcardMode) return;
+    const timer = setTimeout(() => {
+      if (current) autoSpellWord(current);
+    }, 300);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeIndex, groupIndex]);
 
   useEffect(() => {
     setCurrentIndex(0);
