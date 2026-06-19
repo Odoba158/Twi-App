@@ -95,13 +95,14 @@ export default function WordsScreen() {
 
   const goTo = useCallback(
     (index: number) => {
+      stopSpelling();
       const clamped = Math.max(0, Math.min(filteredWords.length - 1, index));
       setCurrentIndex(clamped);
       setActiveLetterIdx(-1);
       animateCard();
       Haptics.selectionAsync();
     },
-    [filteredWords]
+    [filteredWords, stopSpelling]
   );
 
 
@@ -176,15 +177,6 @@ export default function WordsScreen() {
     autoSpellWord(current);
   };
 
-  // Auto-spell whenever the current word changes (navigation or group switch)
-  useEffect(() => {
-    if (isFlashcardMode) return;
-    const timer = setTimeout(() => {
-      if (current) autoSpellWord(current);
-    }, 300);
-    return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [safeIndex, groupIndex]);
 
   useEffect(() => {
     setCurrentIndex(0);
