@@ -1,20 +1,52 @@
 import { useEffect } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
-import { playAudioForId } from '@/utils/speech';
+import { Audio } from 'expo-av';
+import { AUDIO_MAP } from '@/constants/audio-map';
 
 /**
- * Plays the introduction audio once every time the screen comes into focus.
- * Delay (ms) lets the screen finish its enter animation before audio starts.
+ * Plays the introduction audio every time this screen comes into focus.
+ * Creates its own Sound instance so it's independent of the shared speech cache.
  */
-export function useIntroduction(delayMs = 400) {
+export function useIntroduction(delayMs = 500) {
   useFocusEffect(
     useCallback(() => {
-      const timer = setTimeout(() => {
-        playAudioForId('introduction');
-      }, delayMs);
+      let sound: Audio.Sound | null = null;
+      let cancelled = false;
 
-      return () => clearTimeout(timer);
+      const play = async () => {
+        try {
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          if (cancelled) return;
+
+          const audioRes = AUDIO_MAP['introduction'];
+          if (!audioRes) return;
+
+          const created = await Audio.Sound.createAsync(audioRes, {
+            shouldPlay: true,
+          });
+          if (cancelled) {
+            created.sound.unloadAsync();
+            return;
+          }
+          sound = created.sound;
+          sound.setOnPlaybackStatusUpdate((status) => {
+            if (status.isLoaded && status.didJustFinish) {
+              sound?.unloadAsync();
+              sound = null;
+            }
+          });
+        } catch (e) {
+          // silently skip if intro audio is missing or fails
+        }
+      };
+
+      play();
+
+      return () => {
+        cancelled = true;
+        sound?.stopAsync().then(() => sound?.unloadAsync());
+      };
     }, [delayMs])
   );
 }

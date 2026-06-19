@@ -17,7 +17,7 @@ import { TWI_ALPHABET } from '@/constants/twi-data';
 import { useProgress } from '@/context/ProgressContext';
 import { useColors } from '@/hooks/useColors';
 import { useIntroduction } from '@/hooks/useIntroduction';
-import { speakLetter, speakText, stopSpeech } from '@/utils/speech';
+import { speakLetter, stopSpeech, playAudioForId } from '@/utils/speech';
 
 export default function AlphabetScreen() {
   const colors = useColors();
@@ -51,7 +51,7 @@ export default function AlphabetScreen() {
   );
 
   const handleSpeak = () => {
-    speakText(`${current.letter}. Twi name: ${current.twiName}. Example: ${current.exampleWord}, meaning ${current.meaning}.`, 0.75);
+    playAudioForId(current.id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
