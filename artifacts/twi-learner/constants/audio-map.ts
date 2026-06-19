@@ -1,4 +1,5 @@
 export const AUDIO_MAP: Record<string, any> = {
+  'introduction': require('../assets/audio/introduction.mp4'),
   'A': require('../assets/audio/A.m4a'),
   'B': require('../assets/audio/B.m4a'),
   'D': require('../assets/audio/D.m4a'),

@@ -13,10 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TWI_PHRASES } from '@/constants/twi-data';
 import { useColors } from '@/hooks/useColors';
+import { useIntroduction } from '@/hooks/useIntroduction';
 import { playAudioForId } from '@/utils/speech';
 
 export default function PhrasesScreen() {
   const colors = useColors();
+  useIntroduction();
   const insets = useSafeAreaInsets();
   const [activePhrase, setActivePhrase] = useState<string | null>(null);
   

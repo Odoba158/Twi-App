@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TWI_WORDS } from '@/constants/twi-data';
 import { useProgress } from '@/context/ProgressContext';
 import { useColors } from '@/hooks/useColors';
+import { useIntroduction } from '@/hooks/useIntroduction';
 import { speakText, stopSpeech, playAudioForId } from '@/utils/speech';
 
 const WORD_COLORS = [
@@ -46,6 +47,7 @@ const GROUP_TABS = [
 
 export default function WordsScreen() {
   const colors = useColors();
+  useIntroduction();
   const insets = useSafeAreaInsets();
   const { incrementWordsProgress } = useProgress();
 

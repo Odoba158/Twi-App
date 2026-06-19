@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TWI_NUMBERS } from '@/constants/twi-data';
 import { useProgress } from '@/context/ProgressContext';
 import { useColors } from '@/hooks/useColors';
+import { useIntroduction } from '@/hooks/useIntroduction';
 import { speakLetter, speakText, stopSpeech, playAudioForId } from '@/utils/speech';
 
 const RANGE_COLORS = [
@@ -54,6 +55,7 @@ const RECITE_RANGES = [
 
 export default function NumbersScreen() {
   const colors = useColors();
+  useIntroduction();
   const insets = useSafeAreaInsets();
   const { updateNumbersProgress } = useProgress();
 

@@ -16,10 +16,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TWI_ALPHABET } from '@/constants/twi-data';
 import { useProgress } from '@/context/ProgressContext';
 import { useColors } from '@/hooks/useColors';
+import { useIntroduction } from '@/hooks/useIntroduction';
 import { speakLetter, speakText, stopSpeech } from '@/utils/speech';
 
 export default function AlphabetScreen() {
   const colors = useColors();
+  useIntroduction();
   const insets = useSafeAreaInsets();
   const { updateAlphabetProgress } = useProgress();
 
