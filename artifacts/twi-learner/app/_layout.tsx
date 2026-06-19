@@ -20,6 +20,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { ProgressProvider } from "@/context/ProgressContext";
 import { MusicProvider } from "@/context/MusicContext";
 import { UserProvider, useUser } from "@/context/UserContext";
+import { preloadAllSounds } from "@/utils/speech";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -100,6 +101,10 @@ function AppGate() {
   useEffect(() => {
     if (isLoaded && user && !appReady) {
       setShowLoading(true);
+    }
+    if (isLoaded) {
+      // Preload all audio files so playback is instant throughout the app
+      preloadAllSounds();
     }
   }, [isLoaded, user]);
 

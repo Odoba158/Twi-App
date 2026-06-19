@@ -26,8 +26,10 @@ const RANGE_COLORS = [
   ['#C0392B', '#E74C3C'],
 ];
 
-const SPELL_RANGES = [
-  { label: '1–10',  start: 0,  end: 9  },
+const SPELL_AUTO_RANGES = [
+  { label: '1–10',  start: 0, end: 9  },
+  { label: '1–20',  start: 0, end: 19 },
+  { label: '1–50',  start: 0, end: 49 },
   { label: '11–20', start: 10, end: 19 },
   { label: '21–30', start: 20, end: 29 },
   { label: '31–40', start: 30, end: 39 },
@@ -58,11 +60,14 @@ export default function NumbersScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reciteRangeIndex, setReciteRangeIndex] = useState(0);
   const [spellRangeIndex, setSpellRangeIndex] = useState(0);
+  const [autoSpellRangeIndex, setAutoSpellRangeIndex] = useState(0);
   const [isReciting, setIsReciting] = useState(false);
   const [isSpelling, setIsSpelling] = useState(false);
+  const [isAutoSpelling, setIsAutoSpelling] = useState(false);
   const [activeLetterIdx, setActiveLetterIdx] = useState(-1);
   const recitingRef = useRef(false);
   const spellingRef = useRef(false);
+  const autoSpellRef = useRef(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const colorPair = RANGE_COLORS[Math.floor(currentIndex / 20) % RANGE_COLORS.length];
@@ -153,16 +158,52 @@ export default function NumbersScreen() {
       const item = TWI_NUMBERS[idx];
       playAudioForId(`${item.number}`, () => {
         idx++;
-        if (recitingRef.current) setTimeout(reciteNext, 400);
+        if (recitingRef.current) setTimeout(reciteNext, 200);
       });
     };
     reciteNext();
   }, [reciteRangeIndex, updateNumbersProgress, stopSpelling]);
 
+  const stopAutoSpell = useCallback(() => {
+    autoSpellRef.current = false;
+    setIsAutoSpelling(false);
+    stopSpeech();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+  }, []);
+
+  const startAutoSpell = useCallback(() => {
+    stopSpelling();
+    stopRecite();
+    autoSpellRef.current = true;
+    setIsAutoSpelling(true);
+    const range = SPELL_AUTO_RANGES[autoSpellRangeIndex];
+    let idx = range.start;
+
+    const spellNext = () => {
+      if (!autoSpellRef.current || idx > range.end) {
+        autoSpellRef.current = false;
+        setIsAutoSpelling(false);
+        return;
+      }
+      setCurrentIndex(idx);
+      updateNumbersProgress(idx);
+      animateCard();
+      const item = TWI_NUMBERS[idx];
+      const spellKey = `${item.number}_spell`;
+      // Use pre-recorded spell audio if available
+      playAudioForId(spellKey, () => {
+        idx++;
+        if (autoSpellRef.current) setTimeout(spellNext, 300);
+      });
+    };
+    spellNext();
+  }, [autoSpellRangeIndex, updateNumbersProgress, stopSpelling, stopRecite]);
+
   useEffect(() => {
     return () => {
       recitingRef.current = false;
       spellingRef.current = false;
+      autoSpellRef.current = false;
       stopSpeech();
     };
   }, []);
@@ -343,6 +384,45 @@ export default function NumbersScreen() {
             <Feather name={isReciting ? 'square' : 'play-circle'} size={20} color="#fff" />
             <Text style={styles.reciteBtnText}>
               {isReciting ? 'Stop' : `▶ Auto Recite ${RECITE_RANGES[reciteRangeIndex].label}`}
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* AUTO SPELL RANGE */}
+        <View style={[styles.sectionBox, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>AUTO SPELL RANGE (1–50)</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.rangeRow}>
+              {SPELL_AUTO_RANGES.map((r, i) => (
+                <Pressable
+                  key={r.label}
+                  onPress={() => { if (!isAutoSpelling) setAutoSpellRangeIndex(i); }}
+                  style={[
+                    styles.rangeBtn,
+                    { backgroundColor: i === autoSpellRangeIndex ? RANGE_COLORS[i % RANGE_COLORS.length][1] : colors.muted },
+                  ]}
+                >
+                  <Text style={[styles.rangeBtnText, { color: i === autoSpellRangeIndex ? '#fff' : colors.mutedForeground }]}>
+                    {r.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+          <Pressable
+            onPress={isAutoSpelling ? stopAutoSpell : startAutoSpell}
+            style={({ pressed }) => [
+              styles.reciteBtn,
+              {
+                backgroundColor: isAutoSpelling ? '#E74C3C' : RANGE_COLORS[autoSpellRangeIndex % RANGE_COLORS.length][1],
+                opacity: pressed ? 0.85 : 1,
+                marginTop: 12,
+              },
+            ]}
+          >
+            <Feather name={isAutoSpelling ? 'square' : 'book-open'} size={20} color="#fff" />
+            <Text style={styles.reciteBtnText}>
+              {isAutoSpelling ? 'Stop' : `📖 Auto Spell ${SPELL_AUTO_RANGES[autoSpellRangeIndex].label}`}
             </Text>
           </Pressable>
         </View>
