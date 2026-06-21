@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "twi-learner",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
@@ -37,8 +36,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": "aef43a9c-d6e5-4f87-9759-45e13294e265"
-      }
-    }
+        "projectId": "4b4d9906-c075-4bec-b06f-739b2e9070c1"
+      },
+      "router": {}
+    },
+    "owner": "bless123s-organization"
   }
 }

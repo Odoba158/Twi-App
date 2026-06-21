@@ -4,62 +4,57 @@ import * as Speech from 'expo-speech';
 import { Platform } from 'react-native';
 
 // ─── Sound cache: preloaded Audio.Sound objects ───────────────────────────────
-const soundCache: Record<string, Audio.Sound> = {};
 let activeSound: Audio.Sound | null = null;
 let currentOnDoneTimer: ReturnType<typeof setTimeout> | null = null;
 
-/** Call once at app startup to preload every audio asset into memory */
+/** Call once at app startup to set up audio mode. We do not preload 200+ sounds to avoid OS resource limits. */
 export const preloadAllSounds = async () => {
-  await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-  const keys = Object.keys(AUDIO_MAP);
-  await Promise.all(
-    keys.map(async (key) => {
-      try {
-        const { sound } = await Audio.Sound.createAsync(AUDIO_MAP[key], {
-          shouldPlay: false,
-        });
-        soundCache[key] = sound;
-      } catch (e) {
-        // skip missing files silently
-      }
-    })
-  );
+  try {
+    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+  } catch (e) {
+    console.warn('Failed to set audio mode:', e);
+  }
 };
 
-/** Play a preloaded sound by ID. Falls back to creating if not cached. */
+/** Play a sound by ID. Loads on the fly and unloads after playing to free system resources. */
 export const playAudioForId = async (id: string, onDone?: () => void) => {
   try {
-    // Stop whatever is currently playing
+    // Stop and unload whatever is currently playing
     if (activeSound) {
       try {
         await activeSound.stopAsync();
-        await activeSound.setPositionAsync(0);
+        await activeSound.unloadAsync();
       } catch (_) {}
       activeSound = null;
     }
 
     const key = id.toString();
-    let sound = soundCache[key];
-
-    if (!sound) {
-      const audioRes = AUDIO_MAP[key];
-      if (!audioRes) {
-        console.warn(`No audio found for ID: ${key}`);
-        if (onDone) onDone();
-        return;
+    const audioRes = AUDIO_MAP[key];
+    if (!audioRes) {
+      console.warn(`No audio found for ID: ${key}`);
+      if (key.endsWith('1')) {
+        // Fall back to TTS for the single letter name
+        const baseLetter = key.slice(0, -1); // e.g. "D" or "EPS" or "OPS"
+        let speakChar = baseLetter;
+        if (speakChar === 'EPS') speakChar = 'Ɛ';
+        if (speakChar === 'OPS') speakChar = 'Ɔ';
+        return speakLetter(speakChar, onDone || (() => {}), 0.65, true);
       }
-      const created = await Audio.Sound.createAsync(audioRes, { shouldPlay: false });
-      sound = created.sound;
-      soundCache[key] = sound;
+      if (onDone) onDone();
+      return;
     }
 
+    const { sound } = await Audio.Sound.createAsync(audioRes, { shouldPlay: false });
     activeSound = sound;
 
-    // Rewind to start
-    await sound.setPositionAsync(0);
-
-    sound.setOnPlaybackStatusUpdate((status) => {
+    sound.setOnPlaybackStatusUpdate(async (status) => {
       if (status.isLoaded && status.didJustFinish) {
+        try {
+          await sound.unloadAsync();
+        } catch (_) {}
+        if (activeSound === sound) {
+          activeSound = null;
+        }
         if (onDone) onDone();
       }
     });
@@ -85,12 +80,12 @@ export const speakText = async (text: string, rate = 0.8) => {
   }
 };
 
-export const speakLetter = async (
+export async function speakLetter(
   letter: string,
   onDone: () => void,
   rate = 0.65,
   useTts = false
-) => {
+) {
   if (useTts) {
     if (currentOnDoneTimer) {
       clearTimeout(currentOnDoneTimer);
@@ -137,7 +132,7 @@ export const stopSpeech = async () => {
   if (activeSound) {
     try {
       await activeSound.stopAsync();
-      await activeSound.setPositionAsync(0);
+      await activeSound.unloadAsync();
     } catch (_) {}
     activeSound = null;
   }

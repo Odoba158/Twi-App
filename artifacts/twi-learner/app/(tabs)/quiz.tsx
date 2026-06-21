@@ -9,7 +9,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TWI_WORDS, TwiWord } from '@/constants/twi-data';
 import { useProgress } from '@/context/ProgressContext';
 import { useColors } from '@/hooks/useColors';
-import { useIntroduction } from '@/hooks/useIntroduction';
 import { playAudioForId } from '@/utils/speech';
 import { Audio } from 'expo-av';
 import { AUDIO_MAP } from '@/constants/audio-map';
@@ -24,7 +23,6 @@ interface Question {
 
 export default function QuizScreen() {
   const colors = useColors();
-  const { isIntroPlaying } = useIntroduction();
   const insets = useSafeAreaInsets();
   const { addQuizScore } = useProgress();
   const router = useRouter();
@@ -197,8 +195,7 @@ export default function QuizScreen() {
 
   return (
     <View 
-      style={[styles.container, { backgroundColor: colors.background, opacity: isIntroPlaying ? 0.6 : 1 }]} 
-      pointerEvents={isIntroPlaying ? 'none' : 'auto'}
+      style={[styles.container, { backgroundColor: colors.background }]} 
     >
       <View style={[styles.header, { paddingTop: topPad + 12 }]}>
         <Text style={[styles.qCounter, { color: colors.mutedForeground }]}>Question {currentIndex + 1} of 5</Text>

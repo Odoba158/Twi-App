@@ -27,6 +27,7 @@ export default function AlphabetScreen() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isReciting, setIsReciting] = useState(false);
+  const [reciteMode, setReciteMode] = useState<'letter' | 'example'>('letter');
   const recitingRef = useRef(false);
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -50,14 +51,20 @@ export default function AlphabetScreen() {
     [updateAlphabetProgress]
   );
 
-  const handleSpeak = () => {
+  const handleSpeakLetterOnly = () => {
+    playAudioForId(current.id + '1');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleSpeakWithExample = () => {
     playAudioForId(current.id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const startRecite = useCallback(() => {
+  const startRecite = useCallback((mode: 'letter' | 'example') => {
     recitingRef.current = true;
     setIsReciting(true);
+    setReciteMode(mode);
     let idx = 0;
 
     const reciteNext = () => {
@@ -70,15 +77,15 @@ export default function AlphabetScreen() {
       updateAlphabetProgress(idx);
       animateCard();
       const item = TWI_ALPHABET[idx];
-      speakLetter(
-        `${item.letter}. ${item.twiName}`,
+      const audioKey = mode === 'letter' ? (item.id + '1') : item.id;
+      playAudioForId(
+        audioKey,
         () => {
           idx++;
           if (recitingRef.current) {
-            setTimeout(reciteNext, 500);
+            reciteNext();
           }
-        },
-        0.7
+        }
       );
     };
     reciteNext();
@@ -138,16 +145,29 @@ export default function AlphabetScreen() {
           <Text style={[styles.meaning, { color: colors.mutedForeground }]}>{current.meaning}</Text>
         </View>
 
-        <Pressable
-          onPress={handleSpeak}
-          style={({ pressed }) => [
-            styles.speakBtn,
-            { backgroundColor: current.color, opacity: pressed ? 0.8 : 1 },
-          ]}
-        >
-          <Feather name="volume-2" size={20} color="#fff" />
-          <Text style={styles.speakBtnText}>Hear Pronunciation</Text>
-        </Pressable>
+        <View style={styles.speakButtonContainer}>
+          <Pressable
+            onPress={handleSpeakLetterOnly}
+            style={({ pressed }) => [
+              styles.speakBtn,
+              { backgroundColor: current.color, opacity: pressed ? 0.8 : 1 },
+            ]}
+          >
+            <Feather name="volume-2" size={18} color="#fff" />
+            <Text style={styles.speakBtnText}>Hear Pronunciation</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleSpeakWithExample}
+            style={({ pressed }) => [
+              styles.speakBtnSecondary,
+              { borderColor: current.color, borderWidth: 2, opacity: pressed ? 0.8 : 1 },
+            ]}
+          >
+            <Feather name="book-open" size={18} color={current.color} />
+            <Text style={[styles.speakBtnTextSecondary, { color: current.color }]}>Hear with Example</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.navRow}>
           <Pressable
@@ -200,19 +220,41 @@ export default function AlphabetScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={isReciting ? stopRecite : startRecite}
-          style={({ pressed }) => [
-            styles.reciteBtn,
-            {
-              backgroundColor: isReciting ? '#E74C3C' : colors.secondary,
-              opacity: pressed ? 0.85 : 1,
-            },
-          ]}
-        >
-          <Feather name={isReciting ? 'square' : 'play-circle'} size={20} color="#fff" />
-          <Text style={styles.reciteBtnText}>{isReciting ? 'Stop Reciting' : 'Auto Recite All'}</Text>
-        </Pressable>
+        <View style={styles.reciteRow}>
+          <Pressable
+            onPress={() => isReciting ? stopRecite() : startRecite('letter')}
+            style={({ pressed }) => [
+              styles.reciteBtn,
+              {
+                backgroundColor: isReciting && reciteMode === 'letter' ? '#E74C3C' : colors.secondary,
+                opacity: pressed ? 0.85 : 1,
+                flex: 1,
+              },
+            ]}
+          >
+            <Feather name={isReciting && reciteMode === 'letter' ? 'square' : 'play-circle'} size={18} color="#fff" />
+            <Text style={styles.reciteBtnText}>
+              {isReciting && reciteMode === 'letter' ? 'Stop Recite' : 'Recite Letters'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => isReciting ? stopRecite() : startRecite('example')}
+            style={({ pressed }) => [
+              styles.reciteBtn,
+              {
+                backgroundColor: isReciting && reciteMode === 'example' ? '#E74C3C' : colors.secondary,
+                opacity: pressed ? 0.85 : 1,
+                flex: 1,
+              },
+            ]}
+          >
+            <Feather name={isReciting && reciteMode === 'example' ? 'square' : 'play-circle'} size={18} color="#fff" />
+            <Text style={styles.reciteBtnText}>
+              {isReciting && reciteMode === 'example' ? 'Stop Recite' : 'Recite with Examples'}
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
@@ -267,11 +309,19 @@ const styles = StyleSheet.create({
   },
   exampleWord: { fontSize: 28, fontFamily: 'Inter_700Bold', marginBottom: 6 },
   meaning: { fontSize: 16, fontFamily: 'Inter_400Regular' },
+  speakButtonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    flexWrap: 'wrap',
+  },
   speakBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 28,
+    paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 50,
     shadowColor: '#000',
@@ -280,6 +330,16 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
   },
+  speakBtnSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 50,
+    backgroundColor: 'transparent',
+  },
+  speakBtnTextSecondary: { fontSize: 16, fontFamily: 'Inter_600SemiBold' },
   speakBtnText: { color: '#fff', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
   navRow: { flexDirection: 'row', alignItems: 'center', gap: 12, width: '100%' },
   navBtn: {
@@ -323,4 +383,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   reciteBtnText: { color: '#fff', fontSize: 16, fontFamily: 'Inter_600SemiBold' },
+  reciteRow: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginTop: 10,
+  },
 });

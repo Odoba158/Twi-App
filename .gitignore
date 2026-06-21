@@ -47,3 +47,7 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Twi-App specific ignores
+artifacts/twi-learner/desktop/
+artifacts/twi-learner/static-build/

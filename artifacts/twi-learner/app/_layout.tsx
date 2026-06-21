@@ -11,7 +11,6 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { View, AppState, AppStateStatus, PanResponder } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -131,15 +130,13 @@ function AppGate() {
   return (
     <ProgressProvider>
       <GestureHandlerRootView>
-        <KeyboardProvider>
-          <InactivityWrapper onLogout={() => {
-            setAppReady(false);
-            setShowLoading(false);
-            logout();
-          }}>
-            <RootLayoutNav />
-          </InactivityWrapper>
-        </KeyboardProvider>
+        <InactivityWrapper onLogout={() => {
+          setAppReady(false);
+          setShowLoading(false);
+          logout();
+        }}>
+          <RootLayoutNav />
+        </InactivityWrapper>
       </GestureHandlerRootView>
     </ProgressProvider>
   );
