@@ -40,6 +40,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "gamecontroller", selected: "gamecontroller.fill" }} />
         <Label>Games</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="dictionary">
+        <Icon sf={{ default: "magnifyingglass", selected: "magnifyingglass" }} />
+        <Label>Search</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="progress">
         <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
         <Label>Progress</Label>
@@ -152,6 +156,18 @@ function ClassicTabLayout() {
               <SymbolView name="gamecontroller" tintColor={color} size={24} />
             ) : (
               <Feather name="target" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="dictionary"
+        options={{
+          title: "Search",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="magnifyingglass" tintColor={color} size={24} />
+            ) : (
+              <Feather name="search" size={22} color={color} />
             ),
         }}
       />
